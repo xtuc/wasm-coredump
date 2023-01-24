@@ -1,0 +1,19 @@
+[package]
+name = "wasm-coredump-rewriter"
+version = "0.1.0"
+edition = "2021"
+authors = ["Sven Sauleau <sven@sauleau.com>"]
+license = "MIT"
+keywords = ["wasm", "rewrite", "coredump"]
+repository = "https://github.com/xtuc/wasm-coredump/tree/main/rewriter"
+description = "Rewrite Wasm binaries to add coredump support"
+include = ["src", "runtime/build"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+env_logger = "0.9.1"
+log = "0.4.17"
+wasm-parser = { path = "../parser", version = "0.1.0" }
+wasm-printer = { path = "../printer", version = "0.1.0" }
+core-wasm-ast = { path = "../ast", version = "0.1.0" }

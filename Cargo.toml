@@ -1,0 +1,8 @@
+[workspace]
+members = [
+  "wasmgdb",
+  "parser",
+  "ast",
+  "rewriter",
+  "printer",
+]

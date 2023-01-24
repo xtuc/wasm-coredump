@@ -1,0 +1,7 @@
+{
+  "devDependencies": {
+    "asc-wasm": "^0.0.1",
+    "assemblyscript": "0.20.7",
+    "prettier": "^2.8.3"
+  }
+}

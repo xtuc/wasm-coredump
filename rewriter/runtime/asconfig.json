@@ -1,0 +1,17 @@
+{
+  "entries": [
+    "./coredump.ts",
+    "./set-frame.ts"
+  ],
+  "options": {
+    "runtime": "stub"
+  },
+  "targets": {
+    "runtime": {
+      "outFile": "./build/runtime.wasm",
+      "textFile": "./build/runtime.wast",
+      "debug": true,
+      "optimizeLevel": 3
+    }
+  }
+}

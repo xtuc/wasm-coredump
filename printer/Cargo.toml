@@ -1,0 +1,17 @@
+[package]
+name = "wasm-printer"
+version = "0.1.0"
+edition = "2021"
+authors = ["Sven Sauleau <sven@sauleau.com>"]
+license = "MIT"
+keywords = ["wasm", "print", "coredump"]
+repository = "https://github.com/xtuc/wasm-coredump/tree/main/printer"
+description = "Wasm printer"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+core-wasm-ast = { path = "../ast", version = "0.1.0" }
+log = "0.4.17"
+leb128 = "0.2.5"
+byteorder = "1.4.3"
