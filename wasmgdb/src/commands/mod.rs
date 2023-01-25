@@ -1,8 +1,7 @@
 //! Handles the parsing and execution of commands
 
+use crate::{BoxError, Context};
 use std::fmt;
-
-use crate::{coredump, BoxError, Context};
 
 mod examine;
 mod find;
@@ -66,12 +65,12 @@ pub(crate) enum PrintFormat {
 
 pub(crate) fn run_command<R: gimli::Reader>(
     ctx: &mut Context<R>,
-    stack_frames: &Vec<coredump::StackFrame>,
+    thread: &core_wasm_ast::coredump::CoreStack,
     cmd: Command,
 ) -> Result<(), BoxError> {
     match cmd {
         Command::Backtrace => {
-            frames::backtrace(ctx, stack_frames)?;
+            frames::backtrace(ctx, thread)?;
         }
 
         Command::Examine(what, (number, format)) => {
@@ -91,11 +90,10 @@ pub(crate) fn run_command<R: gimli::Reader>(
         }
 
         Command::SelectFrame(selected_frame) => {
-            let stack_frame = &stack_frames[stack_frames.len() - 1 - selected_frame];
+            let stack_frame = &thread.frames[thread.frames.len() - 1 - selected_frame];
 
             frames::print_frame(ctx, &stack_frame)?;
             frames::select_frame(ctx, &stack_frame)?;
-
             ctx.selected_frame = Some(stack_frame.clone());
         }
 

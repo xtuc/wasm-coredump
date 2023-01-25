@@ -76,7 +76,7 @@ fn evaluate_expr<'a, 'b>(
                     if type_modifier.kind() == ddbug_parser::TypeModifierKind::Pointer =>
                 {
                     // *base_addr
-                    let addr = memory::read_ptr(ctx.coredump, base_addr)?;
+                    let addr = memory::read_ptr(&ctx.coredump, base_addr)?;
                     let ty = type_modifier
                         .ty(&ctx.ddbug)
                         .ok_or("unknown target type")?
@@ -114,36 +114,40 @@ pub(crate) fn print<'a, R: gimli::Reader>(
     format: PrintFormat,
     what: Expr<'a>,
 ) -> Result<(), BoxError> {
+    let selected_frame = ctx
+        .selected_frame
+        .as_ref()
+        .ok_or("no frame has been selected")?;
+    let binary_name = ctx
+        .source
+        .get_func_name(selected_frame.code_offset)
+        .unwrap_or_else(|| "unknown".to_string());
+    let func = *ctx
+        .ddbug
+        .functions_by_linkage_name
+        .get(&binary_name)
+        .ok_or(format!("function {} not found", binary_name))?;
+
     if let Some(object) = what.object() {
         if let Some(variable) = ctx.variables.get(object) {
-            let selected_frame = ctx
-                .selected_frame
-                .as_ref()
-                .ok_or("no frame has been selected")?;
-            let func = *ctx
-                .ddbug
-                .functions_by_linkage_name
-                .get(&selected_frame.binary_name)
-                .ok_or(format!("function {} not found", selected_frame.binary_name))?;
-
             let what_type = variable.ty(&ctx.ddbug).unwrap();
             let base_addr = memory::get_param_addr(&selected_frame, &func, &variable)?;
 
             // Evaluate the `what` expression
             let eval_ctx = EvaluationCtx {
                 ddbug: &ctx.ddbug,
-                coredump: ctx.coredump,
+                coredump: &ctx.coredump.data,
             };
             let result = evaluate_expr(&eval_ctx, base_addr, what, Some(what_type.into_owned()))?;
 
             match format {
                 PrintFormat::String => {
-                    let ptr = memory::read_ptr(ctx.coredump, result.addr)?;
+                    let ptr = memory::read_ptr(&ctx.coredump.data, result.addr)?;
 
                     let mut addr = ptr;
                     let mut out = "".to_owned();
                     loop {
-                        let v = ctx.coredump[addr as usize];
+                        let v = ctx.coredump.data[addr as usize];
                         if v == 0 {
                             break;
                         }
@@ -170,19 +174,19 @@ pub(crate) fn print<'a, R: gimli::Reader>(
         // Evaluate the `what` expression
         let eval_ctx = EvaluationCtx {
             ddbug: &ctx.ddbug,
-            coredump: ctx.coredump,
+            coredump: &ctx.coredump.data,
         };
         let result = evaluate_expr(&eval_ctx, 0, what, None)?;
 
         // FIXME: copy pasted from above
         match format {
             PrintFormat::String => {
-                let ptr = memory::read_ptr(ctx.coredump, result.addr)?;
+                let ptr = memory::read_ptr(&ctx.coredump.data, result.addr)?;
 
                 let mut addr = ptr;
                 let mut out = "".to_owned();
                 loop {
-                    let v = ctx.coredump[addr as usize];
+                    let v = ctx.coredump.data[addr as usize];
                     if v == 0 {
                         break;
                     }

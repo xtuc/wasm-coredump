@@ -16,11 +16,11 @@ pub(crate) fn find<'a, R: gimli::Reader>(
     let end = if let Some(Expr::Hex(v)) = end {
         v as usize
     } else {
-        ctx.coredump.len()
+        ctx.coredump.data.len()
     };
 
     let search_bytes = expr_to_bytes(&expr)?;
-    let mem = &ctx.coredump[start..end];
+    let mem = &ctx.coredump.data[start..end];
 
     let mut offset = 0;
     let mut found = 0;

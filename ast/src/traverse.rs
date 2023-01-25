@@ -1,4 +1,4 @@
-use crate::ast;
+use crate::{ast, coredump};
 use log::debug;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -74,6 +74,46 @@ impl WasmModule {
             func_code,
             types: Mutex::new(types),
             func_to_typeidx: Mutex::new(func_to_typeidx),
+        }
+    }
+
+    pub fn get_coredump(&self) -> Result<coredump::Coredump, BoxError> {
+        let mut data = vec![];
+        let mut stacks = vec![];
+        let mut process_info = None;
+
+        for section in self.inner.sections.lock().unwrap().iter() {
+            match &section.value {
+                ast::Section::Data((_section_size, content)) => {
+                    let content = content.lock().unwrap();
+                    let segment = content.first().unwrap();
+                    let offset = segment.compute_offset();
+                    debug!("data offset: {}", offset);
+                    let padding = vec![0u8; offset as usize];
+                    data = [padding, segment.bytes.clone()].concat();
+                }
+
+                ast::Section::Custom((_size, section)) => match &*section.lock().unwrap() {
+                    ast::CustomSection::CoredumpCore(info) => process_info = Some(info.clone()),
+                    ast::CustomSection::CoredumpCoreStack(stack) => stacks.push(stack.clone()),
+
+                    _ => {}
+                },
+
+                _ => {}
+            }
+
+            debug!("data size: {:?}", data.len());
+        }
+
+        if let Some(process_info) = process_info {
+            Ok(coredump::Coredump {
+                data,
+                stacks,
+                process_info,
+            })
+        } else {
+            Err("Wasm module is not a coredump".into())
         }
     }
 

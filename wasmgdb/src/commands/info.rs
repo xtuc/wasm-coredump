@@ -23,11 +23,15 @@ pub(crate) fn info<'a, R: gimli::Reader>(
 
         "locals" => {
             let frame = ctx.selected_frame.as_ref().ok_or("no selected frame")?;
+            let binary_name = ctx
+                .source
+                .get_func_name(frame.code_offset)
+                .unwrap_or_else(|| "unknown".to_string());
             let func = ctx
                 .ddbug
                 .functions_by_linkage_name
-                .get(&frame.binary_name)
-                .ok_or(format!("function {} not found", frame.binary_name))?;
+                .get(&binary_name)
+                .ok_or(format!("function {} not found", binary_name))?;
 
             for (name, param) in &ctx.variables {
                 let ty = param.ty(&ctx.ddbug).unwrap();

@@ -3,6 +3,7 @@
 // Wasm reference interpreter.
 
 mod ast;
+pub mod coredump;
 pub mod traverse;
 
 pub use ast::*;

@@ -1,3 +1,4 @@
+use crate::coredump;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -153,7 +154,7 @@ impl DataSegment {
             }
         }
 
-        panic!("malformed data expression: {:?}", expr)
+        unreachable!("malformed data expression: {:?}", expr)
     }
 }
 
@@ -412,6 +413,8 @@ impl Value<Section> {
 pub enum CustomSection {
     Unknown(String, Vec<u8>),
     Name(DebugNames),
+    CoredumpCore(coredump::ProcessInfo),
+    CoredumpCoreStack(coredump::CoreStack),
 }
 
 #[derive(Debug)]

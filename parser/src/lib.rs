@@ -1,9 +1,11 @@
+use core_wasm_ast as ast;
 use log::{debug, warn};
 use nom::bytes::complete::take;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::Mutex;
-use core_wasm_ast as ast;
+
+mod coredump;
 
 type BoxError = Box<dyn std::error::Error>;
 
@@ -196,10 +198,19 @@ fn decode_section_custom<'a>(
     ctx: InputContext<'a>,
 ) -> IResult<InputContext<'a>, ast::CustomSection> {
     let (ctx, name) = decode_name(ctx)?;
+    log::debug!("parse custom section: {:?}", name);
     Ok(match name.as_str() {
         "name" => {
             let (ctx, content) = decode_section_custom_name(ctx)?;
             (ctx, ast::CustomSection::Name(content))
+        }
+        "core" => {
+            let (ctx, content) = coredump::decode_process_info(ctx)?;
+            (ctx, ast::CustomSection::CoredumpCore(content))
+        }
+        "corestack" => {
+            let (ctx, content) = coredump::decode_core_stack(ctx)?;
+            (ctx, ast::CustomSection::CoredumpCoreStack(content))
         }
         _ => {
             debug!("unknown custom section: {}", name);
@@ -370,7 +381,7 @@ fn decode_import<'a>(ctx: InputContext<'a>) -> IResult<InputContext<'a>, ast::Im
     Ok((ctx, import))
 }
 
-fn decode_name<'a>(ctx: InputContext<'a>) -> IResult<InputContext<'a>, String> {
+pub(crate) fn decode_name<'a>(ctx: InputContext<'a>) -> IResult<InputContext<'a>, String> {
     let (ctx, bytes) = decode_vec(ctx, |ctx| ctx.read_u8())?;
     let v = String::from_utf8_lossy(&bytes).to_string();
     Ok((ctx, v))
@@ -1025,8 +1036,6 @@ fn decode_section<'a>(ctx: InputContext<'a>) -> IResult<InputContext<'a>, ast::S
     let (ctx, size) = ctx.read_leb128()?;
     let end_offset = ctx.offset;
 
-    debug!("decoding section {} ({} byte(s))", id, size);
-
     let section_size = ast::Value {
         start_offset,
         value: size,
@@ -1034,6 +1043,7 @@ fn decode_section<'a>(ctx: InputContext<'a>) -> IResult<InputContext<'a>, ast::S
     };
 
     let offset = ctx.offset;
+    debug!("decoding section {} ({} byte(s)) @ {}", id, size, offset);
     let (ctx, section_bytes) = ctx.read_bytes(size as usize)?;
 
     let section_bytes = InputContext {

@@ -18,7 +18,7 @@ pub(crate) fn examine<'a, R: gimli::Reader>(
     let number = number.unwrap_or_else(|| 8);
 
     for offset in 0..number {
-        let v = ctx.coredump[addr as usize + offset as usize];
+        let v = ctx.coredump.data[addr as usize + offset as usize];
         match format {
             Some(PrintFormat::String) => write!(out, "{}", v as char)?,
             _ => write!(out, "0x{} ", v)?,

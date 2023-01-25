@@ -12,7 +12,6 @@ use std::{borrow, env};
 use wasmgdb_ddbug_parser as ddbug_parser;
 
 mod commands;
-mod coredump;
 mod memory;
 
 use commands::parser::parse_command;
@@ -41,7 +40,7 @@ pub(crate) fn print_value<R: gimli::Reader>(
         }
         ddbug_parser::TypeKind::Base(base_type) => {
             let size_of = base_type.byte_size().unwrap_or(4);
-            let mut bytes = memory::read(ctx.coredump, addr, size_of)?.to_vec();
+            let mut bytes = memory::read(&ctx.coredump.data, addr, size_of)?.to_vec();
             bytes.reverse();
             let value = match base_type.encoding() {
                 ddbug_parser::BaseTypeEncoding::Boolean => {
@@ -103,7 +102,7 @@ pub(crate) fn print_value<R: gimli::Reader>(
         }
         ddbug_parser::TypeKind::Enumeration(enum_type) => {
             let size_of = enum_type.byte_size(&ctx.ddbug).unwrap();
-            let bytes = memory::read(ctx.coredump, addr, size_of)?.to_vec();
+            let bytes = memory::read(&ctx.coredump.data, addr, size_of)?.to_vec();
 
             let value =
                 get_enum_name(ctx, &enum_type, &bytes).unwrap_or_else(|| "<unknown>".to_owned());
@@ -142,14 +141,10 @@ fn get_enum_name<'i, R: gimli::Reader>(
 }
 
 fn repl(
-    coredump: &[u8],
+    coredump: &core_wasm_ast::coredump::Coredump,
     source: &core_wasm_ast::traverse::WasmModule,
     ddbug: ddbug_parser::FileHash<'_>,
 ) -> Result<(), BoxError> {
-    let coredump_wasm = wasm_parser::parse(&coredump)
-        .map_err(|err| format!("failed to parse Wasm module: {}", err))?;
-    let coredump_wasm = core_wasm_ast::traverse::WasmModule::new(Arc::new(coredump_wasm));
-
     // Load a section and return as `Cow<[u8]>`.
     let load_section = |id: gimli::SectionId| -> Result<borrow::Cow<[u8]>, gimli::Error> {
         if let Some(bytes) = source.get_custom_section(id.name()) {
@@ -174,15 +169,8 @@ fn repl(
     // Create `EndianSlice`s for all of the sections.
     let dwarf = Arc::new(dwarf_cow.borrow(&borrow_section));
 
-    let stack_frames = coredump_wasm
-        .get_custom_section("core-stack")
-        .ok_or("core-stack is empty")?;
-    let stack_frames = coredump::decode_coredump(source, &stack_frames)?;
-    if stack_frames.len() == 0 {
-        println!("No frames recorded");
-    }
+    let thread = coredump.stacks.first().ok_or("coredump has no threads")?;
 
-    // Start REPL
     let mut ctx = Context {
         ddbug,
         coredump,
@@ -201,7 +189,7 @@ fn repl(
 
         match parse_command(&line) {
             Ok((_, cmd)) => {
-                if let Err(err) = run_command(&mut ctx, &stack_frames, cmd) {
+                if let Err(err) = run_command(&mut ctx, thread, cmd) {
                     error!("failed to run command ({}): {}", line, err);
                 }
             }
@@ -213,12 +201,11 @@ fn repl(
 }
 
 pub(crate) struct Context<'a, R: gimli::Reader> {
-    selected_frame: Option<coredump::StackFrame>,
+    selected_frame: Option<core_wasm_ast::coredump::StackFrame>,
     /// Variables present in the selected scope
     variables: HashMap<String, ddbug_parser::Parameter<'a>>,
 
-    /// Process memory image.
-    coredump: &'a [u8],
+    coredump: &'a core_wasm_ast::coredump::Coredump,
 
     /// DWARF types
     dwarf: Arc<gimli::Dwarf<R>>,
@@ -257,6 +244,11 @@ pub fn main() -> Result<(), BoxError> {
     let source = wasm_parser::parse(&source)
         .map_err(|err| format!("failed to parse Wasm module: {}", err))?;
     let source = core_wasm_ast::traverse::WasmModule::new(Arc::new(source));
+
+    let coredump_wasm = wasm_parser::parse(&coredump)
+        .map_err(|err| format!("failed to parse Wasm module: {}", err))?;
+    let coredump_wasm = core_wasm_ast::traverse::WasmModule::new(Arc::new(coredump_wasm));
+    let coredump = coredump_wasm.get_coredump()?;
 
     repl(&coredump, &source, ddbug)
 }

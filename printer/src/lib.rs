@@ -1,7 +1,7 @@
 use byteorder::{ByteOrder, LittleEndian};
+use core_wasm_ast as ast;
 use log::warn;
 use std::io::Write;
-use core_wasm_ast as ast;
 
 type BoxError = Box<dyn std::error::Error>;
 
@@ -261,6 +261,10 @@ fn write_section_custom(
         ast::CustomSection::Name(_content) => {
             warn!("ignoring custom name section.");
             write_utf8(buffer, "name");
+        }
+
+        ast::CustomSection::CoredumpCore(_) | ast::CustomSection::CoredumpCoreStack(_) => {
+            unreachable!()
         }
     }
 
