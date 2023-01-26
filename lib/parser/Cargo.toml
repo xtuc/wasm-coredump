@@ -5,7 +5,7 @@ edition = "2021"
 authors = ["Sven Sauleau <sven@sauleau.com>"]
 license = "MIT"
 keywords = ["wasm", "decoder", "coredump"]
-repository = "https://github.com/xtuc/wasm-coredump/tree/main/wasm-parser"
+repository = "https://github.com/xtuc/wasm-coredump/tree/main/lib/parser"
 description = "Wasm parser with coredump support"
 
 [dependencies]

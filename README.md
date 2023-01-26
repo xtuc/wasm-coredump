@@ -35,6 +35,6 @@ Some Wasm binaries have very recursive flow of control, increase the maximum sta
 ```
 $ ulimit -s 160000
 ```
-[wasmgdb]: wasmgdb/README.md
-[demo]: wasmgdb/demo.md
+[wasmgdb]: bin/wasmgdb/README.md
+[demo]: bin/wasmgdb/demo.md
 [specificiation]: https://github.com/WebAssembly/tool-conventions/blob/19f5576d4344c9fcdb3855d5793908d051f393f0/Coredump.md

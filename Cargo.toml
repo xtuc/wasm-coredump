@@ -1,8 +1,5 @@
 [workspace]
 members = [
-  "wasmgdb",
-  "parser",
-  "ast",
-  "rewriter",
-  "printer",
+  "lib/*",
+  "bin/*",
 ]

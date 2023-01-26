@@ -6,7 +6,7 @@ description = "gdb for WebAssembly"
 authors = ["Sven Sauleau <sven@sauleau.com>"]
 license = "MIT"
 keywords = ["wasm", "gdb", "debug", "coredump", "stack"]
-repository = "https://github.com/xtuc/wasm-coredump/tree/main/wasmgdb"
+repository = "https://github.com/xtuc/wasm-coredump/tree/main/bin/wasmgdb"
 
 [dependencies]
 gimli = "0.26.2"
@@ -16,5 +16,5 @@ wasmgdb_ddbug_parser = { version = "0.3.1" }
 log = "0.4.17"
 nom = "7.1.1"
 hex = "0.4.3"
-core-wasm-ast = { path = "../ast", version = "0.1.0" }
-wasm-parser = { path = "../parser", version = "0.1.0" }
+core-wasm-ast = { path = "../../lib/ast", version = "0.1.0" }
+wasm-parser = { path = "../../lib/parser", version = "0.1.0" }

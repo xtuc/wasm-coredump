@@ -5,7 +5,7 @@ edition = "2021"
 authors = ["Sven Sauleau <sven@sauleau.com>"]
 license = "MIT"
 keywords = ["wasm", "print", "coredump"]
-repository = "https://github.com/xtuc/wasm-coredump/tree/main/printer"
+repository = "https://github.com/xtuc/wasm-coredump/tree/main/lib/printer"
 description = "Wasm printer"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

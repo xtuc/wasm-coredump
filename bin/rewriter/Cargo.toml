@@ -5,7 +5,7 @@ edition = "2021"
 authors = ["Sven Sauleau <sven@sauleau.com>"]
 license = "MIT"
 keywords = ["wasm", "rewrite", "coredump"]
-repository = "https://github.com/xtuc/wasm-coredump/tree/main/rewriter"
+repository = "https://github.com/xtuc/wasm-coredump/tree/main/bin/rewriter"
 description = "Rewrite Wasm binaries to add coredump support"
 include = ["src", "runtime/build"]
 
@@ -14,6 +14,6 @@ include = ["src", "runtime/build"]
 [dependencies]
 env_logger = "0.9.1"
 log = "0.4.17"
-wasm-parser = { path = "../parser", version = "0.1.0" }
-wasm-printer = { path = "../printer", version = "0.1.0" }
-core-wasm-ast = { path = "../ast", version = "0.1.0" }
+wasm-parser = { path = "../../lib/parser", version = "0.1.0" }
+wasm-printer = { path = "../../lib/printer", version = "0.1.0" }
+core-wasm-ast = { path = "../../lib/ast", version = "0.1.0" }

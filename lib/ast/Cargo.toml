@@ -5,7 +5,7 @@ edition = "2021"
 authors = ["Sven Sauleau <sven@sauleau.com>"]
 license = "MIT"
 keywords = ["wasm", "ast", "coredump"]
-repository = "https://github.com/xtuc/wasm-coredump/tree/main/ast"
+repository = "https://github.com/xtuc/wasm-coredump/tree/main/lib/ast"
 description = "Wasm AST with traversal and manipulations"
 
 [dependencies]
