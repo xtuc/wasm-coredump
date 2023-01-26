@@ -3,6 +3,8 @@ use core_wasm_ast as ast;
 use log::warn;
 use std::io::Write;
 
+pub mod coredump;
+
 type BoxError = Box<dyn std::error::Error>;
 
 pub fn print(module: &ast::Module) -> Result<Vec<u8>, BoxError> {
