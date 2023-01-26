@@ -321,7 +321,7 @@ impl Visitor for CoredumpTransform {
 }
 
 fn get_runtime() -> Result<WasmModule, BoxError> {
-    let contents = include_bytes!("../runtime/build/runtime.wasm");
+    let contents = include_bytes!("../runtime.wasm");
     let module_ast = wasm_parser::parse(contents)
         .map_err(|err| format!("failed to parse runtime Wasm module: {}", err))?;
     let module = WasmModule::new(Arc::new(module_ast));

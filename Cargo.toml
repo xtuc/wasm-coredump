@@ -1,5 +1,7 @@
 [workspace]
 members = [
-  "lib/*",
+  "lib/ast",
+  "lib/parser",
+  "lib/printer",
   "bin/*",
 ]

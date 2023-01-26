@@ -1,3 +1,4 @@
 target/
 node_modules/
-rewriter/runtime/build/
+bin/rewriter/runtime.wasm
+lib/asc-coredump/build/

@@ -7,7 +7,7 @@ license = "MIT"
 keywords = ["wasm", "rewrite", "coredump"]
 repository = "https://github.com/xtuc/wasm-coredump/tree/main/bin/rewriter"
 description = "Rewrite Wasm binaries to add coredump support"
-include = ["src", "runtime/build"]
+include = ["src", "runtime.wasm"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
