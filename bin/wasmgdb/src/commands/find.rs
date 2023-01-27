@@ -1,13 +1,16 @@
 use crate::commands::Expr;
-use crate::{BoxError, Context};
+use crate::repl::Context;
+use crate::BoxError;
 use colored::Colorize;
 
-pub(crate) fn find<'a, R: gimli::Reader>(
-    ctx: &Context<R>,
+pub(crate) fn find<'a>(
+    ctx: &'a Context<'a>,
     start: Option<Expr<'a>>,
     end: Option<Expr<'a>>,
     expr: Expr<'a>,
 ) -> Result<(), BoxError> {
+    let coredump = ctx.coredump.as_ref().ok_or("no coredump present")?;
+
     let start = if let Some(Expr::Hex(v)) = start {
         v as usize
     } else {
@@ -16,11 +19,11 @@ pub(crate) fn find<'a, R: gimli::Reader>(
     let end = if let Some(Expr::Hex(v)) = end {
         v as usize
     } else {
-        ctx.coredump.data.len()
+        coredump.data.len()
     };
 
     let search_bytes = expr_to_bytes(&expr)?;
-    let mem = &ctx.coredump.data[start..end];
+    let mem = &coredump.data[start..end];
 
     let mut offset = 0;
     let mut found = 0;

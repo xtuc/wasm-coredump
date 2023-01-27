@@ -1,11 +1,11 @@
 use super::Expr;
 use crate::memory;
-use crate::print_value;
-use crate::{BoxError, Context};
+use crate::repl::{print_value, Context};
+use crate::BoxError;
 use colored::Colorize;
 
-pub(crate) fn info<'a, R: gimli::Reader>(
-    ctx: &Context<R>,
+pub(crate) fn info<'a>(
+    ctx: &'a Context<'a>,
     what: &'a str,
     args: Vec<Expr>,
 ) -> Result<(), BoxError> {
@@ -33,7 +33,7 @@ pub(crate) fn info<'a, R: gimli::Reader>(
                 .get(&binary_name)
                 .ok_or(format!("function {} not found", binary_name))?;
 
-            for (name, param) in &ctx.variables {
+            for (name, param) in ctx.variables.iter() {
                 let ty = param.ty(&ctx.ddbug).unwrap();
 
                 let addr = memory::get_param_addr(frame, func, &param)?;

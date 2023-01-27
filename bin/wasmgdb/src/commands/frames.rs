@@ -1,8 +1,9 @@
-use crate::{memory, BoxError, Context};
+use crate::repl::Context;
+use crate::{memory, BoxError};
 use colored::Colorize;
 
-pub(crate) fn backtrace<R: gimli::Reader>(
-    ctx: &Context<R>,
+pub(crate) fn backtrace<'a>(
+    ctx: &Context<'a>,
     thread: &core_wasm_ast::coredump::CoreStack,
 ) -> Result<(), BoxError> {
     let mut i = thread.frames.len();
@@ -24,10 +25,11 @@ pub(crate) fn backtrace<R: gimli::Reader>(
     Ok(())
 }
 
-pub(crate) fn print_frame<'a, R: gimli::Reader>(
-    ctx: &Context<R>,
+pub(crate) fn print_frame<'a>(
+    ctx: &Context<'a>,
     frame: &core_wasm_ast::coredump::StackFrame,
 ) -> Result<(), BoxError> {
+    let coredump = ctx.coredump.as_ref().ok_or("no coredump present")?;
     let binary_name = ctx
         .source
         .get_func_name(frame.code_offset)
@@ -60,7 +62,7 @@ pub(crate) fn print_frame<'a, R: gimli::Reader>(
                     let size_of = 4;
 
                     let value = if let Ok(addr) = memory::get_param_addr(frame, &func, param) {
-                        let bytes = memory::read(&ctx.coredump.data, addr, size_of).unwrap();
+                        let bytes = memory::read(&coredump.data, addr, size_of).unwrap();
                         format!("0x{}", hex::encode(&bytes))
                     } else {
                         "???".to_owned()
@@ -85,8 +87,8 @@ pub(crate) fn print_frame<'a, R: gimli::Reader>(
     Ok(())
 }
 
-pub(crate) fn select_frame<R: gimli::Reader>(
-    ctx: &mut Context<R>,
+pub(crate) fn select_frame<'a>(
+    ctx: &mut Context<'a>,
     frame: &core_wasm_ast::coredump::StackFrame,
 ) -> Result<(), BoxError> {
     // Clear previous selected scope

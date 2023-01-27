@@ -433,6 +433,7 @@ pub trait Visitor {
     fn visit_table<'a>(&self, _ctx: &'_ mut VisitorContext<'a, ast::Table>) {}
     fn visit_export<'a>(&self, _ctx: &'_ mut VisitorContext<'a, ast::Export>) {}
     fn visit_element<'a>(&self, _ctx: &'_ mut VisitorContext<'a, ast::Element>) {}
+    fn visit_code<'a>(&self, _ctx: &'_ mut VisitorContext<'a, ast::Code>, _funcidx: u32) {}
 }
 
 pub fn traverse(module: Arc<ast::Module>, visitor: Arc<dyn Visitor + Send + Sync>) {
@@ -530,6 +531,11 @@ pub fn traverse(module: Arc<ast::Module>, visitor: Arc<dyn Visitor + Send + Sync
 
                 let codes = codes.lock().unwrap().clone();
                 for code in codes.value {
+                    {
+                        let mut ctx = VisitorContext::new(Arc::clone(&module_ast), &code);
+                        Arc::clone(&visitor).visit_code(&mut ctx, curr_funcidx);
+                    }
+
                     {
                         let visitor = Arc::clone(&visitor);
                         let module_ast = Arc::clone(&module_ast);

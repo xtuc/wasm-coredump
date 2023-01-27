@@ -21,6 +21,7 @@ pub struct CoreStack {
     pub frames: Vec<StackFrame>,
 }
 
+#[derive(Debug, Clone)]
 pub struct Coredump {
     pub process_info: ProcessInfo,
     pub stacks: Vec<CoreStack>,

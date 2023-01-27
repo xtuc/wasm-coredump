@@ -1,14 +1,17 @@
 //! Handles the parsing and execution of commands
 
-use crate::{BoxError, Context};
+use crate::repl::Context;
+use crate::BoxError;
 use std::fmt;
 
+mod breakpoint;
 mod examine;
 mod find;
 mod frames;
 mod info;
 pub(crate) mod parser;
 mod print;
+mod run;
 
 #[derive(Debug, PartialEq, Clone)]
 pub(crate) enum Expr<'a> {
@@ -55,6 +58,8 @@ pub(crate) enum Command<'a> {
     Examine(Expr<'a>, (Option<u32>, Option<PrintFormat>)),
     Find(Option<Expr<'a>>, Option<Expr<'a>>, Expr<'a>),
     Info(&'a str, Vec<Expr<'a>>),
+    Run,
+    BreakPoint(u32),
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -63,14 +68,19 @@ pub(crate) enum PrintFormat {
     String,
 }
 
-pub(crate) fn run_command<R: gimli::Reader>(
-    ctx: &mut Context<R>,
-    thread: &core_wasm_ast::coredump::CoreStack,
-    cmd: Command,
-) -> Result<(), BoxError> {
+pub(crate) fn run_command(ctx: &mut Context, cmd: Command) -> Result<(), BoxError> {
     match cmd {
+        Command::Run => {
+            run::run(ctx)?;
+        }
+
+        Command::BreakPoint(pos) => {
+            breakpoint::set_breakpoint(ctx, pos)?;
+        }
+
         Command::Backtrace => {
-            frames::backtrace(ctx, thread)?;
+            let thread = ctx.thread()?;
+            frames::backtrace(&ctx, &thread)?;
         }
 
         Command::Examine(what, (number, format)) => {
@@ -90,9 +100,10 @@ pub(crate) fn run_command<R: gimli::Reader>(
         }
 
         Command::SelectFrame(selected_frame) => {
+            let thread = ctx.thread()?;
             let stack_frame = &thread.frames[thread.frames.len() - 1 - selected_frame];
 
-            frames::print_frame(ctx, &stack_frame)?;
+            frames::print_frame(&ctx, &stack_frame)?;
             frames::select_frame(ctx, &stack_frame)?;
             ctx.selected_frame = Some(stack_frame.clone());
         }

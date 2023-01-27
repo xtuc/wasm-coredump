@@ -100,6 +100,13 @@ pub(crate) fn parse_command<'a>(input: &'a str) -> IResult<&'a str, Command<'a>>
 
     Ok(match word {
         "bt" => (input, Command::Backtrace),
+        "run" => (input, Command::Run),
+        "b" => {
+            let (input, n) = preceded(tag(" "), digit1)(input)?;
+            let n = n.parse::<u32>().unwrap();
+
+            (input, Command::BreakPoint(n))
+        }
         "x" => {
             let (input, params) = opt(preceded(tag("/"), pair(digit1, opt(alpha1))))(input)?;
             let params = if let Some((number, format)) = params {

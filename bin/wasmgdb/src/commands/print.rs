@@ -1,6 +1,6 @@
 use crate::commands::{Expr, PrintFormat};
-use crate::print_value;
-use crate::{memory, BoxError, Context};
+use crate::repl::{print_value, Context};
+use crate::{memory, BoxError};
 use log::error;
 use std::fmt::Write;
 use wasmgdb_ddbug_parser as ddbug_parser;
@@ -109,8 +109,8 @@ fn evaluate_expr<'a, 'b>(
     }
 }
 
-pub(crate) fn print<'a, R: gimli::Reader>(
-    ctx: &Context<R>,
+pub(crate) fn print<'a>(
+    ctx: &Context<'a>,
     format: PrintFormat,
     what: Expr<'a>,
 ) -> Result<(), BoxError> {
@@ -127,6 +127,7 @@ pub(crate) fn print<'a, R: gimli::Reader>(
         .functions_by_linkage_name
         .get(&binary_name)
         .ok_or(format!("function {} not found", binary_name))?;
+    let coredump = ctx.coredump.as_ref().ok_or("no coredump present")?;
 
     if let Some(object) = what.object() {
         if let Some(variable) = ctx.variables.get(object) {
@@ -136,18 +137,18 @@ pub(crate) fn print<'a, R: gimli::Reader>(
             // Evaluate the `what` expression
             let eval_ctx = EvaluationCtx {
                 ddbug: &ctx.ddbug,
-                coredump: &ctx.coredump.data,
+                coredump: &coredump.data,
             };
             let result = evaluate_expr(&eval_ctx, base_addr, what, Some(what_type.into_owned()))?;
 
             match format {
                 PrintFormat::String => {
-                    let ptr = memory::read_ptr(&ctx.coredump.data, result.addr)?;
+                    let ptr = memory::read_ptr(&coredump.data, result.addr)?;
 
                     let mut addr = ptr;
                     let mut out = "".to_owned();
                     loop {
-                        let v = ctx.coredump.data[addr as usize];
+                        let v = coredump.data[addr as usize];
                         if v == 0 {
                             break;
                         }
@@ -174,19 +175,19 @@ pub(crate) fn print<'a, R: gimli::Reader>(
         // Evaluate the `what` expression
         let eval_ctx = EvaluationCtx {
             ddbug: &ctx.ddbug,
-            coredump: &ctx.coredump.data,
+            coredump: &coredump.data,
         };
         let result = evaluate_expr(&eval_ctx, 0, what, None)?;
 
         // FIXME: copy pasted from above
         match format {
             PrintFormat::String => {
-                let ptr = memory::read_ptr(&ctx.coredump.data, result.addr)?;
+                let ptr = memory::read_ptr(&coredump.data, result.addr)?;
 
                 let mut addr = ptr;
                 let mut out = "".to_owned();
                 loop {
-                    let v = ctx.coredump.data[addr as usize];
+                    let v = coredump.data[addr as usize];
                     if v == 0 {
                         break;
                     }
