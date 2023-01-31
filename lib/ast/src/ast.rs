@@ -83,7 +83,8 @@ pub type MutableValue<T> = Arc<Mutex<Value<T>>>;
 
 #[derive(Debug, Clone)]
 pub struct Memory {
-    pub initial_memory: Value<u32>,
+    pub min: Value<u32>,
+    pub max: Option<u32>,
 }
 
 #[derive(Debug, Clone)]

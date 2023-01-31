@@ -81,6 +81,7 @@ impl WasmModule {
         let mut data = vec![];
         let mut stacks = vec![];
         let mut process_info = None;
+        let mut memory = vec![];
 
         for section in self.inner.sections.lock().unwrap().iter() {
             match &section.value {
@@ -91,6 +92,10 @@ impl WasmModule {
                     debug!("data offset: {}", offset);
                     let padding = vec![0u8; offset as usize];
                     data = [padding, segment.bytes.clone()].concat();
+                }
+
+                ast::Section::Memory((_section_size, content)) => {
+                    memory = content.clone();
                 }
 
                 ast::Section::Custom((_size, section)) => match &*section.lock().unwrap() {
@@ -106,15 +111,14 @@ impl WasmModule {
             debug!("data size: {:?}", data.len());
         }
 
-        if let Some(process_info) = process_info {
-            Ok(coredump::Coredump {
-                data,
-                stacks,
-                process_info,
-            })
-        } else {
-            Err("Wasm module is not a coredump".into())
-        }
+        let process_info = process_info.ok_or("Wasm module is not a coredump")?;
+
+        Ok(coredump::Coredump {
+            data,
+            stacks,
+            process_info,
+            memory,
+        })
     }
 
     pub fn add_data(&self, offset: u32, bytes: &[u8]) -> (u32, u32) {

@@ -147,8 +147,14 @@ fn write_section_memory(buffer: &mut Vec<u8>, content: &Vec<ast::Memory>) -> Res
     write_vec_len(buffer, content); // vec length
 
     for mem in content {
-        buffer.push(0x0);
-        write_unsigned_leb128(buffer, mem.initial_memory.value as u64);
+        if let Some(max) = mem.max {
+            buffer.push(0x1);
+            write_unsigned_leb128(buffer, mem.min.value as u64);
+            write_unsigned_leb128(buffer, max as u64);
+        } else {
+            buffer.push(0x0);
+            write_unsigned_leb128(buffer, mem.min.value as u64);
+        }
     }
 
     Ok(())

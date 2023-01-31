@@ -15,6 +15,7 @@ pub fn dump_coredump<W: Write>(
         dump_stack(out, 1, &stack)?;
     }
     dump_data(out, 1, &coredump.data)?;
+    dump_memory(out, 1, &coredump.memory)?;
     write!(out, ")")?;
 
     Ok(())
@@ -72,5 +73,23 @@ fn dump_data<W: Write>(out: &mut W, depth: usize, data: &[u8]) -> Result<(), Box
     write!(out, " (i32.const 0)")?;
     write!(out, " \"...{} bytes\"", data.len())?;
     writeln!(out, ")")?;
+    Ok(())
+}
+
+fn dump_memory<W: Write>(
+    out: &mut W,
+    depth: usize,
+    memories: &Vec<ast::Memory>,
+) -> Result<(), BoxError> {
+    let tab = TAB.repeat(depth);
+
+    for memory in memories {
+        write!(out, "{}(memory {}", tab, memory.min.value)?;
+        if let Some(max) = memory.max {
+            writeln!(out, " {})", max)?;
+        } else {
+            writeln!(out, ")")?;
+        }
+    }
     Ok(())
 }

@@ -1,3 +1,5 @@
+use super::ast;
+
 #[derive(Debug, Clone)]
 pub struct ProcessInfo {
     pub executable_name: String,
@@ -25,5 +27,6 @@ pub struct CoreStack {
 pub struct Coredump {
     pub process_info: ProcessInfo,
     pub stacks: Vec<CoreStack>,
+    pub memory: Vec<ast::Memory>,
     pub data: Vec<u8>,
 }

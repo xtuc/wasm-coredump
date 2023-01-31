@@ -1015,17 +1015,27 @@ fn decode_memory<'a>(ctx: InputContext<'a>) -> IResult<InputContext<'a>, ast::Me
     let start_offset = ctx.offset;
     let (ctx, min) = ctx.read_leb128()?;
     let end_offset = ctx.offset;
-    let initial_memory = ast::Value {
+    let min = ast::Value {
         start_offset,
         value: min,
         end_offset,
     };
 
-    if t != 0 {
-        todo!();
-    }
+    let (ctx, mem) = match t {
+        0 => (ctx, ast::Memory { min, max: None }),
+        1 => {
+            let (ctx, max) = ctx.read_leb128()?;
+            (
+                ctx,
+                ast::Memory {
+                    min,
+                    max: Some(max),
+                },
+            )
+        }
+        e => unimplemented!("unsupported memory type: {}", e),
+    };
 
-    let mem = ast::Memory { initial_memory };
     Ok((ctx, mem))
 }
 

@@ -1,9 +1,9 @@
 target/debug/wasm-coredump-rewriter: rewriter/runtime/build/runtime.wasm
 	cargo build
 
-rewriter/runtime/build/runtime.wasm:
-	make -C ./rewriter/runtime build/runtime.wasm
+lib/asc-coredump/build/runtime.wasm:
+	make -C ./lib/asc-coredump build/runtime.wasm
 
 .PHONY: test
-test:
+test: lib/asc-coredump/build/runtime.wasm
 	cd lib/asc-coredump && node tests/index.mjs

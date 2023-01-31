@@ -78,6 +78,20 @@ export function write_coredump(): void {
     ptr += write_process_info(ptr)
   }
 
+  // memory section
+  {
+    const max = memory.size();
+    const section_size =
+      1 // memory count
+      + 1 // memory type
+      + 1 // memory min
+      + wasm.leb128_u32_byte_size(max) // memory max 
+
+    ptr += wasm.write_section_header(ptr, 5, section_size);
+    ptr += wasm.write_leb128_u32(ptr, 1) // memory count
+    ptr += wasm.write_memory_with_max(ptr, 0, max)
+  }
+
   // data section
   {
     const mem_size = memory.size() * 64 * 1024;
