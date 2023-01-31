@@ -16,10 +16,10 @@ wasmgdb_ddbug_parser = { version = "0.3.1" }
 log = "0.4.17"
 nom = "7.1.1"
 hex = "0.4.3"
-core-wasm-ast = { path = "../../lib/ast", version = "0.1.0" }
-wasm-parser = { path = "../../lib/parser", version = "0.1.0" }
-wasm-printer = { path = "../../lib/printer", version = "0.1.0" }
-wasm-coredump-rewriter = { path = "../../bin/rewriter", version = "0.1.0" }
+core-wasm-ast = { path = "../../lib/ast", version = "0.1.7" }
+wasm-parser = { path = "../../lib/parser", version = "0.1.7" }
+wasm-printer = { path = "../../lib/printer", version = "0.1.7" }
+wasm-coredump-rewriter = { path = "../../bin/rewriter", version = "0.1.7" }
 clap = { version = "4.1.4", features = ["derive"] }
 wasmtime = "5.0.0"
 wasmtime-wasi = "5.0.0"
