@@ -15,6 +15,7 @@ pub struct WasmModule {
     func_to_typeidx: Mutex<Vec<u32>>,
     func_starts: HashMap<u32, usize>,
     func_code: HashMap<u32, ast::Code>,
+    pub func_names: HashMap<u32, String>,
     imports: Vec<ast::Import>,
     exports: Vec<ast::Export>,
 }
@@ -27,6 +28,7 @@ impl WasmModule {
         let mut exports = Vec::new();
         let mut func_starts = HashMap::new();
         let mut func_code = HashMap::new();
+        let mut func_names = HashMap::new();
 
         for section in inner.sections.lock().unwrap().iter() {
             match &section.value {
@@ -61,6 +63,13 @@ impl WasmModule {
                         funcidx += 1;
                     }
                 }
+
+                ast::Section::Custom((_size, section)) => match &*section.lock().unwrap() {
+                    ast::CustomSection::Name(names) => {
+                        func_names = names.func_names.clone();
+                    }
+                    _ => {}
+                },
                 _ => {}
             }
         }
@@ -72,6 +81,7 @@ impl WasmModule {
             func_locals,
             func_starts,
             func_code,
+            func_names,
             types: Mutex::new(types),
             func_to_typeidx: Mutex::new(func_to_typeidx),
         }

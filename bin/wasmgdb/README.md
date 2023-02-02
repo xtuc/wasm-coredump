@@ -80,6 +80,10 @@ Get informations about the function at the given index.
 
 List WebAssembly module's imported functions from the host.
 
+#### `info functions`
+
+List all defined functions.
+
 ### Expr
 
 - Member access: `<object>-><member>`

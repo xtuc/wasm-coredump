@@ -82,8 +82,43 @@ pub(crate) fn info<'a>(
         "imports" => {
             let imports = ctx.source.imports();
             println!("{} import(s) =", imports.len());
+            let mut funcidx = 0;
             for import in imports {
-                println!("{}.{}", import.module, import.name)
+                println!(
+                    "#{}\t{}.{}",
+                    format!("{:0>6}", funcidx).blue(),
+                    import.module,
+                    import.name
+                );
+                funcidx += 1;
+            }
+
+            Ok(())
+        }
+
+        "functions" => {
+            if ctx.ddbug.functions_by_address.len() == 0 {
+                println!("no functions defined.");
+            }
+            for (funcidx, func_name) in &ctx.source.func_names {
+                if let Some(func) = ctx.ddbug.functions_by_linkage_name.get(func_name) {
+                    let source = format!(
+                        "{}/{}",
+                        func.source()
+                            .directory()
+                            .unwrap_or_else(|| "<directory not found>"),
+                        func.source().file().unwrap_or_else(|| "<file not found>")
+                    );
+
+                    let name = func.name().unwrap();
+                    println!("{} as {} at {}", funcidx.to_string().blue(), name, source);
+                } else {
+                    println!(
+                        "{} as ??? ({}) at <unknown>",
+                        funcidx.to_string().blue(),
+                        func_name
+                    );
+                }
             }
 
             Ok(())
