@@ -27,24 +27,24 @@ pub(crate) fn run<'a>(ctx: &mut Context<'a>) -> Result<(), BoxError> {
     match start.call(&mut store, ()) {
         Err(err) => {
             println!("program failed: {}", err);
+
+            // Extract coredump
+            let mem = instance
+                .get_memory(&mut store, "memory")
+                .ok_or("failed to get memory")?;
+            let data = mem.data(&mut store);
+
+            let coredump_wasm = wasm_parser::parse(&data)
+                .map_err(|err| format!("failed to parse Wasm module: {}", err))?;
+            let coredump_wasm = core_wasm_ast::traverse::WasmModule::new(Arc::new(coredump_wasm));
+
+            ctx.coredump = Some(coredump_wasm.get_coredump()?);
+            ctx.selected_thread = Some(0);
         }
         Ok(o) => {
             println!("program exited successfully: {:?}", o);
         }
     };
-
-    // Extract coredump
-    let mem = instance
-        .get_memory(&mut store, "memory")
-        .ok_or("failed to get memory")?;
-    let data = mem.data(&mut store);
-
-    let coredump_wasm =
-        wasm_parser::parse(&data).map_err(|err| format!("failed to parse Wasm module: {}", err))?;
-    let coredump_wasm = core_wasm_ast::traverse::WasmModule::new(Arc::new(coredump_wasm));
-
-    ctx.coredump = Some(coredump_wasm.get_coredump()?);
-    ctx.selected_thread = Some(0);
 
     Ok(())
 }
