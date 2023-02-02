@@ -11,8 +11,7 @@ pub(crate) fn set_breakpoint(ctx: &mut Context, pos: u32) -> Result<(), BoxError
     let module = WasmModule::new(Arc::clone(&ctx.source.inner));
     let func_name = module.get_func_name(pos).ok_or("function not found")?;
 
-    let func = {
-        let func = ctx.ddbug.functions_by_linkage_name.get(&func_name).unwrap();
+    let func = if let Some(func) = ctx.ddbug.functions_by_linkage_name.get(&func_name) {
         let source = format!(
             "{}/{}",
             func.source()
@@ -45,6 +44,9 @@ pub(crate) fn set_breakpoint(ctx: &mut Context, pos: u32) -> Result<(), BoxError
 
         let addr = format!("{:0>6}", pos).blue();
         format!("{} as {} at {}", addr, function, source)
+    } else {
+        let addr = format!("{:0>6}", pos).blue();
+        format!("{} as {} at ???", addr, func_name)
     };
 
     // FIXME: move to rewriter.
