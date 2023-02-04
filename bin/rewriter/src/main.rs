@@ -1,6 +1,3 @@
-
-
-
 use log::info;
 
 use std::io::stdin;
@@ -34,7 +31,7 @@ fn main() -> Result<(), BoxError> {
     info!("transform: {:.2?}", elapsed);
 
     let now = Instant::now();
-    input = wasm_printer::print(&module)?;
+    input = wasm_printer::wasm::print(&module)?;
     let elapsed = now.elapsed();
     info!("print: {:.2?}", elapsed);
 

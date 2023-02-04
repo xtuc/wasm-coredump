@@ -14,7 +14,7 @@ fn main() -> Result<(), BoxError> {
     let coredump = coredump_wasm.get_coredump()?;
 
     let mut out = String::new();
-    wasm_printer::coredump::dump_coredump(&mut out, &coredump)?;
+    wasm_printer::wast::coredump::dump_coredump(&mut out, &coredump)?;
 
     println!("{}", out);
     Ok(())

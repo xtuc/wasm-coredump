@@ -17,7 +17,7 @@ pub(crate) fn run<'a>(ctx: &mut Context<'a>) -> Result<(), BoxError> {
         .build();
     let mut store = wasmtime::Store::new(&engine, wasi);
 
-    let bytes = wasm_printer::print(&module)?;
+    let bytes = wasm_printer::wasm::print(&module)?;
     let wasmtime_module = wasmtime::Module::new(&engine, bytes)?;
 
     linker.module(&mut store, "", &wasmtime_module)?;
