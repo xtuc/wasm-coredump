@@ -17,6 +17,7 @@ pub struct WasmModule {
     func_code: HashMap<u32, ast::Code>,
     pub func_names: HashMap<u32, String>,
     imports: Vec<ast::Import>,
+    globals: Vec<ast::Global>,
     exports: Vec<ast::Export>,
 }
 impl WasmModule {
@@ -25,6 +26,7 @@ impl WasmModule {
         let mut func_locals = HashMap::new();
         let mut func_to_typeidx = Vec::new();
         let mut imports = Vec::new();
+        let mut globals = Vec::new();
         let mut exports = Vec::new();
         let mut func_starts = HashMap::new();
         let mut func_code = HashMap::new();
@@ -42,6 +44,10 @@ impl WasmModule {
 
                 ast::Section::Import((_size, content)) => {
                     imports = content.lock().unwrap().clone();
+                }
+
+                ast::Section::Global((_size, content)) => {
+                    globals = content.lock().unwrap().clone();
                 }
 
                 ast::Section::Func((_size, content)) => {
@@ -77,6 +83,7 @@ impl WasmModule {
         Self {
             inner,
             imports,
+            globals,
             exports,
             func_locals,
             func_starts,
@@ -158,6 +165,10 @@ impl WasmModule {
 
     pub fn imports(&self) -> &Vec<ast::Import> {
         &self.imports
+    }
+
+    pub fn globals(&self) -> &Vec<ast::Global> {
+        &self.globals
     }
 
     pub fn func_locals_count(&self, funcidx: u32) -> u32 {

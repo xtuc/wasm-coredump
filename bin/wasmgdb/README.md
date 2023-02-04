@@ -84,6 +84,10 @@ List WebAssembly module's imported functions from the host.
 
 List all defined functions.
 
+#### `info globals`
+
+List globals.
+
 ### Expr
 
 - Member access: `<object>-><member>`

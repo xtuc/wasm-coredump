@@ -461,6 +461,21 @@ pub struct Global {
     pub expr: Expr,
 }
 
+impl Global {
+    pub fn compute_value(&self) -> i64 {
+        let expr = &self.expr.value;
+        if !self.global_type.mutable {
+            for instr in expr {
+                if let Instr::i32_const(v) = instr.value {
+                    return v;
+                }
+            }
+        }
+
+        unreachable!("unsupported global expression: {:?}", expr)
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct GlobalType {
     pub valtype: ValueType,

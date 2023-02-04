@@ -81,7 +81,7 @@ pub(crate) fn info<'a>(
 
         "imports" => {
             let imports = ctx.source.imports();
-            println!("{} import(s) =", imports.len());
+            println!("{} import(s).", imports.len());
             let mut funcidx = 0;
             for import in imports {
                 println!(
@@ -91,6 +91,32 @@ pub(crate) fn info<'a>(
                     import.name
                 );
                 funcidx += 1;
+            }
+
+            Ok(())
+        }
+
+        "globals" => {
+            let globals = ctx.source.globals();
+            println!("{} global(s).", globals.len());
+            let mut globalidx = 0;
+            for global in globals {
+                let mut def = "".to_string();
+                wasm_printer::wast::print_global(&mut def, global)?;
+
+                let value = if global.global_type.mutable {
+                    "???".to_owned()
+                } else {
+                    global.compute_value().to_string()
+                };
+
+                println!(
+                    "#{}\t{} = {}",
+                    format!("{:0>6}", globalidx).blue(),
+                    def,
+                    value
+                );
+                globalidx += 1;
             }
 
             Ok(())
