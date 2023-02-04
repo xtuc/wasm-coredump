@@ -232,6 +232,11 @@ impl WasmModule {
         types.get(&typeidx).expect("type not found").clone()
     }
 
+    pub fn get_type(&self, typeidx: u32) -> Option<ast::Type> {
+        let types = self.types.lock().unwrap();
+        types.get(&typeidx).cloned()
+    }
+
     pub fn get_func_typeidx(&self, funcidx: u32) -> u32 {
         let func_to_typeidx = self.func_to_typeidx.lock().unwrap();
 

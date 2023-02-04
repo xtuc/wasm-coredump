@@ -84,10 +84,13 @@ pub(crate) fn info<'a>(
             println!("{} import(s).", imports.len());
             let mut funcidx = 0;
             for import in imports {
-                let mut def = "".to_string();
-                wasm_printer::wast::print_import(&mut def, import)?;
+                let mut printer = wasm_printer::WastPrinter {
+                    module: &ctx.source,
+                    out: &mut "".to_owned(),
+                };
+                printer.print_import(import)?;
 
-                println!("#{}\t{}", format!("{:0>6}", funcidx).blue(), def);
+                println!("#{}\t{}", format!("{:0>6}", funcidx).blue(), printer.out);
                 funcidx += 1;
             }
 
@@ -99,8 +102,11 @@ pub(crate) fn info<'a>(
             println!("{} global(s).", globals.len());
             let mut globalidx = 0;
             for global in globals {
-                let mut def = "".to_string();
-                wasm_printer::wast::print_global(&mut def, global)?;
+                let mut printer = wasm_printer::WastPrinter {
+                    module: &ctx.source,
+                    out: &mut "".to_owned(),
+                };
+                printer.print_global(global)?;
 
                 let value = if global.global_type.mutable {
                     "???".to_owned()
@@ -111,7 +117,7 @@ pub(crate) fn info<'a>(
                 println!(
                     "#{}\t{} = {}",
                     format!("{:0>6}", globalidx).blue(),
-                    def,
+                    printer.out,
                     value
                 );
                 globalidx += 1;
