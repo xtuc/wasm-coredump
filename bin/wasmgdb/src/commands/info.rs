@@ -84,12 +84,10 @@ pub(crate) fn info<'a>(
             println!("{} import(s).", imports.len());
             let mut funcidx = 0;
             for import in imports {
-                println!(
-                    "#{}\t{}.{}",
-                    format!("{:0>6}", funcidx).blue(),
-                    import.module,
-                    import.name
-                );
+                let mut def = "".to_string();
+                wasm_printer::wast::print_import(&mut def, import)?;
+
+                println!("#{}\t{}", format!("{:0>6}", funcidx).blue(), def);
                 funcidx += 1;
             }
 

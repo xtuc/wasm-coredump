@@ -59,3 +59,19 @@ pub fn print_instr<W: Write>(out: &mut W, node: &ast::Instr) -> Result<(), BoxEr
     write!(out, "{}", expr)?;
     Ok(())
 }
+
+pub fn print_import<W: Write>(out: &mut W, node: &ast::Import) -> Result<(), BoxError> {
+    write!(out, "(import ")?;
+    print_name(out, &node.module)?;
+    write!(out, " ")?;
+    print_name(out, &node.name)?;
+    write!(out, " ")?;
+    write!(out, "(type {})", node.typeidx)?;
+    write!(out, ")")?;
+    Ok(())
+}
+
+pub fn print_name<W: Write>(out: &mut W, node: &str) -> Result<(), BoxError> {
+    write!(out, "\"{}\"", node)?;
+    Ok(())
+}
