@@ -63,13 +63,16 @@ pub fn rewrite(module_ast: Arc<ast::Module>) -> Result<(), BoxError> {
     debug!("unreachable_shim func at {}", unreachable_shim);
 
     let write_coredump = {
-        let typeidx = module.add_type(&ast::make_type!());
+        let t = ast::make_type! { (I32) -> () };
+        let typeidx = module.add_type(&t);
         let func = runtime
             .get_export_func("write_coredump")
             .expect("failed to get write_coredump");
         module.add_function(&func, typeidx)
     };
     debug!("write_coredump func at {}", write_coredump);
+
+    let global_count = module.globals().len();
 
     let set_frame_funcs = LazySetFrameMap {
         module,
@@ -81,6 +84,7 @@ pub fn rewrite(module_ast: Arc<ast::Module>) -> Result<(), BoxError> {
         is_unwinding,
         unreachable_shim,
         write_coredump,
+        global_count,
         set_frame_funcs: Arc::new(Mutex::new(set_frame_funcs)),
     };
     traverse::traverse(Arc::clone(&module_ast), Arc::new(visitor));
@@ -157,6 +161,8 @@ struct CoredumpTransform {
     is_unwinding: u32,
     unreachable_shim: u32,
     write_coredump: u32,
+    /// Amount of globals in the module
+    global_count: usize,
     set_frame_funcs: Arc<Mutex<LazySetFrameMap>>,
 }
 
@@ -327,6 +333,9 @@ impl Visitor for CoredumpTransform {
                     // We are at the edge of the module, stop unwinding the
                     // stack and trap.
                     let write_coredump = Arc::new(Mutex::new(ast::Value::new(self.write_coredump)));
+                    body.push(ast::Value::new(ast::Instr::i32_const(
+                        self.global_count as i64,
+                    )));
                     body.push(ast::Value::new(ast::Instr::call(write_coredump)));
                     body.push(ast::Value::new(ast::Instr::unreachable));
                 } else {

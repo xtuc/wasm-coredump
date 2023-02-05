@@ -16,6 +16,9 @@ pub fn dump_coredump<W: Write>(
     }
     dump_data(out, 1, &coredump.data)?;
     dump_memory(out, 1, &coredump.memory)?;
+    for global in &coredump.globals {
+        dump_global(out, 1, global)?;
+    }
     write!(out, ")")?;
 
     Ok(())
@@ -91,5 +94,20 @@ fn dump_memory<W: Write>(
             writeln!(out, ")")?;
         }
     }
+    Ok(())
+}
+
+fn dump_global<W: Write>(out: &mut W, depth: usize, global: &ast::Global) -> Result<(), BoxError> {
+    let tab = TAB.repeat(depth);
+
+    write!(out, "{}(global ", tab)?;
+    let t = match global.global_type.valtype {
+        ast::ValueType::NumType(ast::NumType::F32) => "f32",
+        ast::ValueType::NumType(ast::NumType::F64) => "f64",
+        ast::ValueType::NumType(ast::NumType::I32) => "i32",
+        ast::ValueType::NumType(ast::NumType::I64) => "i64",
+    };
+    write!(out, "{} ", t)?;
+    writeln!(out, " (i32.const {}))", global.compute_value())?;
     Ok(())
 }

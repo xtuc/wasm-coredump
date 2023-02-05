@@ -99,6 +99,7 @@ impl WasmModule {
         let mut stacks = vec![];
         let mut process_info = None;
         let mut memory = vec![];
+        let mut globals = vec![];
 
         for section in self.inner.sections.lock().unwrap().iter() {
             match &section.value {
@@ -113,6 +114,10 @@ impl WasmModule {
 
                 ast::Section::Memory((_section_size, content)) => {
                     memory = content.clone();
+                }
+
+                ast::Section::Global((_section_size, content)) => {
+                    globals = content.lock().unwrap().clone();
                 }
 
                 ast::Section::Custom((_size, section)) => match &*section.lock().unwrap() {
@@ -135,6 +140,7 @@ impl WasmModule {
             stacks,
             process_info,
             memory,
+            globals,
         })
     }
 

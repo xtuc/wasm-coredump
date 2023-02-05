@@ -23,7 +23,7 @@ function write_thread_info(ptr: u32): u32 {
   return wrote
 }
 
-export function write_coredump(): void {
+export function write_coredump(global_count: u32): void {
   let ptr: u32 = 0;
 
   // copy coredump struct in the corestack section
@@ -90,6 +90,19 @@ export function write_coredump(): void {
     ptr += wasm.write_section_header(ptr, 5, section_size);
     ptr += wasm.write_leb128_u32(ptr, 1) // memory count
     ptr += wasm.write_memory_with_max(ptr, 0, max)
+  }
+
+  // global section
+  {
+    const section_size =
+      wasm.leb128_u32_byte_size(global_count) // global count
+      + (2 /* type / mut */ + 1 /* i32.const */ + 1 /* value ?? */ + 1 /*end */) * global_count // global object
+
+    ptr += wasm.write_section_header(ptr, 6, section_size);
+    ptr += wasm.write_leb128_u32(ptr, global_count) // global count
+    for (let i: u32 = 0; i < global_count; ++i) {
+      ptr += wasm.write_const_global(ptr, 9+i)
+    }
   }
 
   // data section
