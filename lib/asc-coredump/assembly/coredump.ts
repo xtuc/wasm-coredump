@@ -23,6 +23,8 @@ function write_thread_info(ptr: u32): u32 {
   return wrote
 }
 
+declare function get_global(i: u32): i32
+
 export function write_coredump(global_count: u32): void {
   let ptr: u32 = 0;
 
@@ -94,14 +96,21 @@ export function write_coredump(global_count: u32): void {
 
   // global section
   {
-    const section_size =
-      wasm.leb128_u32_byte_size(global_count) // global count
-      + (2 /* type / mut */ + 1 /* i32.const */ + 1 /* value ?? */ + 1 /*end */) * global_count // global object
+    let section_size =
+      wasm.leb128_u32_byte_size(global_count); // global count
+
+    // Calculate section size
+    for (let i: u32 = 0; i < global_count; ++i) {
+      const value = get_global(i);
+      const value_size = wasm.leb128_u32_byte_size(value);
+      section_size += (2 /* type / mut */ + 1 /* i32.const */ + value_size /* value */ + 1 /* end */)
+    }
 
     ptr += wasm.write_section_header(ptr, 6, section_size);
     ptr += wasm.write_leb128_u32(ptr, global_count) // global count
     for (let i: u32 = 0; i < global_count; ++i) {
-      ptr += wasm.write_const_global(ptr, 9+i)
+      const value = get_global(i);
+      ptr += wasm.write_const_global(ptr, value)
     }
   }
 
