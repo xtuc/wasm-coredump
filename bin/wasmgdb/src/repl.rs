@@ -193,17 +193,20 @@ pub(crate) fn repl(
         print!("wasmgdb> ");
         io::stdout().flush().unwrap();
 
-        let line = stdin.lock().lines().next().unwrap()?;
-
-        match parse_command(&line) {
-            Ok((_, cmd)) => {
-                if let Err(err) = run_command(&mut ctx, cmd) {
-                    error!("failed to run command ({}): {}", line, err);
+        if let Some(line) = stdin.lock().lines().next() {
+            let line = line?;
+            match parse_command(&line) {
+                Ok((_, cmd)) => {
+                    if let Err(err) = run_command(&mut ctx, cmd) {
+                        error!("failed to run command ({}): {}", line, err);
+                    }
+                }
+                Err(err) => {
+                    error!("error while parsing ({}): {}", line, err);
                 }
             }
-            Err(err) => {
-                error!("error while parsing ({}): {}", line, err);
-            }
+        } else {
+            return Ok(());
         }
     }
 }
