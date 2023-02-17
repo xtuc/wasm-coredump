@@ -1,4 +1,4 @@
-This document goes through running my broken code in production and using `wasmgdb` to analyze a crash, and hopefully fix it.
+This document goes through running my broken code in production and using [wasmgdb] to analyze a crash, and hopefully fix it.
 
 My Rust code:
 ```rust
@@ -22,7 +22,7 @@ fn calculate(value: usize) -> usize {
 ```
 
 Compiling to Wasm: `cargo build --target wasm32-wasi`.
-Transforming the Wasm binary to support coredump (this step will hopefully be gone soon): `wasm-edit coredump < ./test-program/target/wasm32-wasi/debug/test-program.wasm > ./test-program/target/wasm32-wasi/debug/test-program-final.wasm`.
+Transforming the Wasm binary to support coredump (this step will hopefully be gone soon) using [wasm-coredump-rewriter]: `wasm-coredump-rewriter < ./test-program/target/wasm32-wasi/debug/test-program.wasm > ./test-program/target/wasm32-wasi/debug/test-program-final.wasm`.
 
 Finally I can run my program using a Node & WASI environment:
 ```
@@ -35,7 +35,7 @@ note: Some details are omitted, run with `RUST_BACKTRACE=full` for a verbose bac
 
 Oh no, what a suprise, the program crashed because of an exception in Rust. Annoyingly, we don't have more information (so far).
 
-Note that Node isn't able to show us a stack trace due to the `wasm-edit` transformation.
+Note that Node isn't able to show us a stack trace due to the `wasm-coredump-rewriter` transformation.
 A coredump has been generated and written to a file called `coredump.1669887752424`.
 
 From the output we can see that the program crashed at line 16, which is here:
@@ -46,7 +46,7 @@ fn calculate(value: usize) -> usize {
 }
 ```
 
-Now let's analyze the crash in `wasmgdb` to see where it went wrong (if you didn't spot it from my broken code already).
+Now let's analyze the crash in [wasmgdb] to see where it went wrong (if you didn't spot it from my broken code already).
 
 ```
 $ wasmgdb coredump.* ./test-program/target/wasm32-wasi/debug/test-program.wasm
@@ -136,3 +136,6 @@ value: usize = 0x00000003
 As you can see, all that evidence points to the decimal value 3 being passed to the `calculate` function, which it subtracted to 10, and caused an interger overflow. We figured it out without using a single `console.log`!
 
 Feel free to reproduce the crash and play with it yourself: https://github.com/xtuc/demo-node-wasm-coredump.
+
+[wasmgdb]: https://github.com/xtuc/wasm-coredump/tree/main/bin/wasmgdb
+[wasm-coredump-rewriter]: https://github.com/xtuc/wasm-coredump/tree/main/bin/rewriter

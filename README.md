@@ -2,26 +2,18 @@
 
 > Monorepo for generating, parsing, debugging WebAssembly coredumps.
 
+See [demo] for an overview about how to use Wasm coredumps.
 
 ## Debugging
 
-See [demo] for an overview about how to use Wasm coredumps.
+> Think gdb for WebAssembly
 
-```
-cargo install wasmgdb
+See [wasmgdb] for documentation.
 
-wasmgdb /path/to/coredump /path/to/source.wasm
-```
+## Use Coredump today
 
-See [wasmgdb] for complete documentation.
-
-## Rewrite
-
-```bash
-cargo install wasm-coredump-rewriter
-
-wasm-coredump-rewriter < input.wasm > output.wasm
-```
+Since no Wasm engine support exists today, you an use [wasm-coredump-rewriter] to inject Coredump
+support.
 
 ## Coredump format
 
@@ -37,4 +29,5 @@ $ ulimit -s 160000
 ```
 [wasmgdb]: bin/wasmgdb/README.md
 [demo]: bin/wasmgdb/demo.md
-[specificiation]: https://github.com/WebAssembly/tool-conventions/blob/19f5576d4344c9fcdb3855d5793908d051f393f0/Coredump.md
+[specificiation]: https://github.com/WebAssembly/tool-conventions/blob/main/Coredump.md
+[wasm-coredump-rewriter]: bin/rewriter/README.md

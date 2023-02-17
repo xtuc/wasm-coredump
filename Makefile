@@ -18,3 +18,11 @@ test-rewriter: target/debug/wasm-coredump-rewriter
 
 .PHONY: test
 test: test-runtime test-rewriter
+
+.PHONY: publish
+publish:
+	cd ./lib/ast && cargo publish
+	cd ./lib/parser && cargo publish
+	cd ./lib/printer && cargo publish
+	cd ./bin/rewriter && cargo publish --allow-dirty
+	cd ./bin/wasmgdb && cargo publish
