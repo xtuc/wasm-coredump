@@ -130,7 +130,8 @@ pub(crate) fn info<'a>(
             if ctx.ddbug.functions_by_address.len() == 0 {
                 println!("no functions defined.");
             }
-            for (funcidx, func_name) in &ctx.source.func_names {
+            let func_name = ctx.source.func_names.lock().unwrap();
+            for (funcidx, func_name) in func_name.iter() {
                 if let Some(func) = ctx.ddbug.functions_by_linkage_name.get(func_name) {
                     let source = format!(
                         "{}/{}",

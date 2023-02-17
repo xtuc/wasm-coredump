@@ -237,9 +237,9 @@ fn decode_section_custom<'a>(
 fn decode_section_custom_name<'a>(
     ctx: InputContext<'a>,
 ) -> IResult<InputContext<'a>, ast::DebugNames> {
-    let module = "unnamed".to_owned();
-    let mut func_names = HashMap::new();
-    let func_local_names = HashMap::new();
+    let module = None;
+    let mut func_names = None;
+    let func_local_names = None;
 
     let mut ctx = ctx;
 
@@ -266,7 +266,7 @@ fn decode_section_custom_name<'a>(
             1 => {
                 let ret = decode_namemap(ctx)?;
                 ctx = ret.0;
-                func_names = ret.1;
+                func_names = Some(Arc::new(Mutex::new(ret.1)));
             }
             // 2 => {
             //     let ret = ctx.read_leb128()?;

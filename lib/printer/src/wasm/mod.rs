@@ -264,14 +264,49 @@ fn write_section_custom(
             write_utf8(buffer, &name);
             buffer.extend_from_slice(&bytes);
         }
-        ast::CustomSection::Name(_content) => {
-            warn!("ignoring custom name section.");
-            write_utf8(buffer, "name");
-        }
+        ast::CustomSection::Name(content) => write_section_custom_name(buffer, &content)?,
 
         ast::CustomSection::CoredumpCore(_) | ast::CustomSection::CoredumpCoreStack(_) => {
             unreachable!()
         }
+    }
+
+    Ok(())
+}
+
+fn write_section_custom_name(
+    buffer: &mut Vec<u8>,
+    content: &ast::DebugNames,
+) -> Result<(), BoxError> {
+    write_utf8(buffer, "name");
+
+    if let Some(_module_name) = &content.module {
+        warn!("Module Name not implemented yet")
+    }
+
+    if let Some(func_names) = &content.func_names {
+        buffer.push(1);
+
+        let mut subsection = vec![];
+        {
+            let func_names = func_names.lock().unwrap();
+
+            write_unsigned_leb128(&mut subsection, func_names.len() as u64);
+
+            for funcidx in 0..func_names.len() {
+                if let Some(name) = func_names.get(&(funcidx as u32)) {
+                    write_unsigned_leb128(&mut subsection, funcidx as u64);
+                    write_utf8(&mut subsection, name);
+                }
+            }
+        }
+
+        write_unsigned_leb128(buffer, subsection.len() as u64);
+        buffer.extend_from_slice(&subsection)
+    }
+
+    if let Some(_func_local_names) = &content.func_local_names {
+        warn!("Local Names not implemented yet")
     }
 
     Ok(())

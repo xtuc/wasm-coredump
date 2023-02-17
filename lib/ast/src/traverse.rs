@@ -15,7 +15,7 @@ pub struct WasmModule {
     func_to_typeidx: Mutex<Vec<u32>>,
     func_starts: HashMap<u32, usize>,
     func_code: HashMap<u32, ast::Code>,
-    pub func_names: HashMap<u32, String>,
+    pub func_names: Mutex<HashMap<u32, String>>,
     imports: Vec<ast::Import>,
     globals: Vec<ast::Global>,
     exports: Vec<ast::Export>,
@@ -72,7 +72,9 @@ impl WasmModule {
 
                 ast::Section::Custom((_size, section)) => match &*section.lock().unwrap() {
                     ast::CustomSection::Name(names) => {
-                        func_names = names.func_names.clone();
+                        if let Some(v) = &names.func_names {
+                            func_names = v.lock().unwrap().clone();
+                        }
                     }
                     _ => {}
                 },
@@ -88,9 +90,29 @@ impl WasmModule {
             func_locals,
             func_starts,
             func_code,
-            func_names,
+            func_names: Mutex::new(func_names),
             types: Mutex::new(types),
             func_to_typeidx: Mutex::new(func_to_typeidx),
+        }
+    }
+
+    pub fn add_func_name(&self, funcidx: u32, name: &str) {
+        let mut func_names = self.func_names.lock().unwrap();
+        func_names.insert(funcidx, name.to_owned());
+
+        for section in self.inner.sections.lock().unwrap().iter() {
+            match &section.value {
+                ast::Section::Custom((_size, section)) => match &*section.lock().unwrap() {
+                    ast::CustomSection::Name(names) => {
+                        if let Some(names) = &names.func_names {
+                            let mut names = names.lock().unwrap();
+                            names.insert(funcidx, name.to_owned());
+                        }
+                    }
+                    _ => {}
+                },
+                _ => {}
+            }
         }
     }
 
@@ -295,8 +317,10 @@ impl WasmModule {
             match &section.value {
                 ast::Section::Custom((_size, section)) => match &*section.lock().unwrap() {
                     ast::CustomSection::Name(names) => {
-                        if let Some(name) = names.func_names.get(&funcidx) {
-                            return Some(name.clone());
+                        if let Some(v) = &names.func_names {
+                            if let Some(name) = v.lock().unwrap().get(&funcidx) {
+                                return Some(name.clone());
+                            }
                         }
                     }
                     _ => {}

@@ -482,9 +482,9 @@ pub struct GlobalType {
     pub mutable: bool,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct DebugNames {
-    pub module: String,
-    pub func_names: HashMap<u32, String>,
-    pub func_local_names: HashMap<u32, HashMap<u32, String>>,
+    pub module: Option<String>,
+    pub func_names: Option<Arc<Mutex<HashMap<u32, String>>>>,
+    pub func_local_names: Option<HashMap<u32, HashMap<u32, String>>>,
 }

@@ -57,7 +57,9 @@ pub fn rewrite(module_ast: Arc<ast::Module>) -> Result<(), BoxError> {
             size: ast::Value::new(0), // printer calculates based on the body
             body: Arc::new(Mutex::new(body)),
         };
-        module.add_function(&func, typeidx)
+        let funcidx = module.add_function(&func, typeidx);
+        module.add_func_name(funcidx, "coredump/unreachable_shim");
+        funcidx
     };
     debug!("unreachable_shim func at {}", unreachable_shim);
 
@@ -66,7 +68,9 @@ pub fn rewrite(module_ast: Arc<ast::Module>) -> Result<(), BoxError> {
         let func = runtime
             .get_export_func("write_coredump")
             .expect("failed to get write_coredump");
-        module.add_function(&func, typeidx)
+        let funcidx = module.add_function(&func, typeidx);
+        module.add_func_name(funcidx, "coredump/write_coredump");
+        funcidx
     };
     debug!("write_coredump func at {}", write_coredump);
 
@@ -75,7 +79,9 @@ pub fn rewrite(module_ast: Arc<ast::Module>) -> Result<(), BoxError> {
         let func = runtime
             .get_export_func("start_frame")
             .expect("failed to get start_frame");
-        module.add_function(&func, typeidx)
+        let funcidx = module.add_function(&func, typeidx);
+        module.add_func_name(funcidx, "coredump/start_frame");
+        funcidx
     };
     debug!("start_frame func at {}", start_frame);
 
@@ -84,7 +90,9 @@ pub fn rewrite(module_ast: Arc<ast::Module>) -> Result<(), BoxError> {
         let func = runtime
             .get_export_func("add_i32_local")
             .expect("failed to get add_i32_local");
-        module.add_function(&func, typeidx)
+        let funcidx = module.add_function(&func, typeidx);
+        module.add_func_name(funcidx, "coredump/add_i32_local");
+        funcidx
     };
     debug!("add_i32_local func at {}", add_i32_local);
 
@@ -93,7 +101,9 @@ pub fn rewrite(module_ast: Arc<ast::Module>) -> Result<(), BoxError> {
         let func = runtime
             .get_export_func("add_f32_local")
             .expect("failed to get add_f32_local");
-        module.add_function(&func, typeidx)
+        let funcidx = module.add_function(&func, typeidx);
+        module.add_func_name(funcidx, "coredump/add_f32_local");
+        funcidx
     };
     debug!("add_f32_local func at {}", add_f32_local);
 
@@ -102,7 +112,9 @@ pub fn rewrite(module_ast: Arc<ast::Module>) -> Result<(), BoxError> {
         let func = runtime
             .get_export_func("add_f64_local")
             .expect("failed to get add_f64_local");
-        module.add_function(&func, typeidx)
+        let funcidx = module.add_function(&func, typeidx);
+        module.add_func_name(funcidx, "coredump/add_f64_local");
+        funcidx
     };
     debug!("add_f64_local func at {}", add_f64_local);
 
@@ -111,7 +123,9 @@ pub fn rewrite(module_ast: Arc<ast::Module>) -> Result<(), BoxError> {
         let func = runtime
             .get_export_func("add_i64_local")
             .expect("failed to get add_i64_local");
-        module.add_function(&func, typeidx)
+        let funcidx = module.add_function(&func, typeidx);
+        module.add_func_name(funcidx, "coredump/add_i64_local");
+        funcidx
     };
     debug!("add_i64_local func at {}", add_i64_local);
 
