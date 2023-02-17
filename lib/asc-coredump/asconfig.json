@@ -1,7 +1,6 @@
 {
   "entries": [
-    "./assembly/coredump.ts",
-    "./assembly/set-frame.ts"
+    "./assembly/coredump.ts"
   ],
   "options": {
     "runtime": "stub"

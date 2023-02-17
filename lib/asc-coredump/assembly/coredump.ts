@@ -23,6 +23,54 @@ function write_thread_info(ptr: u32): u32 {
   return wrote
 }
 
+@inline
+function get_frames_ptr(): u32 {
+  const next_frame = load<u32>(4)
+  let ptr: u32 = next_frame
+  if (ptr === 0) {
+    // It's the first frame we add, it starts after the "number of frames (u32)"
+    // and "next frame offset (u32)".
+    ptr = sizeof<u32>() * 2
+  }
+
+  return ptr
+}
+
+@inline
+function set_frames_ptr(ptr: u32): void {
+  store<u32>(4, ptr)
+}
+
+export function start_frame(code_offset: u32, local_count: u32): void {
+  // update frame counter
+  const frame_count = load<u32>(0)
+  store<u32>(0, frame_count + 1)
+
+  let ptr = get_frames_ptr();
+
+  // Create frame struct
+  store<u32>(ptr, code_offset)
+  ptr += 4
+  store<u32>(ptr, local_count)
+  ptr += 4
+
+  set_frames_ptr(ptr)
+}
+
+export function add_i32_local(v: i32): void {
+  let ptr = get_frames_ptr();
+
+  // Type
+  store<u8>(ptr, 0x7F)
+  ptr += 1;
+
+  // Value
+  store<i32>(ptr, v)
+  ptr += 4;
+
+  set_frames_ptr(ptr)
+}
+
 export function write_coredump(): void {
   let ptr: u32 = 0;
 
@@ -35,9 +83,8 @@ export function write_coredump(): void {
     + 1 // thread name size
     + 4 // thread name
 
-  // The `corestack` section contains the coredump stack frames. The `set_frame`
-  // functions wrote the frames in the memory and we construct the Wasm
-  // section around them.
+  // The `corestack` section contains the coredump stack frames. We wrote the
+  // frames in the memory and we construct the Wasm section around them.
   const start_corestack_section =
     4 // wasm header
     + 4 // wasm version

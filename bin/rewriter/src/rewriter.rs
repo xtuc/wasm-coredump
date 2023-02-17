@@ -12,7 +12,6 @@
 use core_wasm_ast as ast;
 use core_wasm_ast::traverse::{self, Visitor, VisitorContext, WasmModule};
 use log::debug;
-use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::Mutex;
 
@@ -71,17 +70,30 @@ pub fn rewrite(module_ast: Arc<ast::Module>) -> Result<(), BoxError> {
     };
     debug!("write_coredump func at {}", write_coredump);
 
-    let set_frame_funcs = LazySetFrameMap {
-        module,
-        runtime,
-        map: HashMap::new(),
+    let start_frame = {
+        let typeidx = module.add_type(&ast::make_type!( (I32, I32) -> () ));
+        let func = runtime
+            .get_export_func("start_frame")
+            .expect("failed to get start_frame");
+        module.add_function(&func, typeidx)
     };
+    debug!("start_frame func at {}", start_frame);
+
+    let add_i32_local = {
+        let typeidx = module.add_type(&ast::make_type!( (I32) -> () ));
+        let func = runtime
+            .get_export_func("add_i32_local")
+            .expect("failed to get add_i32_local");
+        module.add_function(&func, typeidx)
+    };
+    debug!("add_i32_local func at {}", add_i32_local);
 
     let visitor = CoredumpTransform {
         is_unwinding,
         unreachable_shim,
         write_coredump,
-        set_frame_funcs: Arc::new(Mutex::new(set_frame_funcs)),
+        start_frame,
+        add_i32_local,
     };
     traverse::traverse(Arc::clone(&module_ast), Arc::new(visitor));
 
@@ -112,54 +124,12 @@ pub fn locals_flatten(locals: Vec<ast::CodeLocal>) -> Vec<ast::CodeLocal> {
     out
 }
 
-/// Mapping of set_frame* to func, lazyly added to the Wasm module if missing
-/// from the map.
-struct LazySetFrameMap {
-    module: WasmModule,
-    runtime: WasmModule,
-    /// Mapping between local count and corresponding set_frame function
-    map: HashMap<u32, u32>,
-}
-impl LazySetFrameMap {
-    fn get(&mut self, nargs: u32) -> u32 {
-        if let Some(funcidx) = self.map.get(&nargs) {
-            return *funcidx;
-        }
-
-        let func_name = format!("set_frame{}", nargs);
-        let func = self
-            .runtime
-            .get_export_func(&func_name)
-            .expect(&format!("failed to get {}", func_name));
-
-        // FIXME: extract the type from the runtime.wasm module
-        let typeidx = {
-            let mut t = ast::Type {
-                params: vec![
-                    ast::ValueType::NumType(ast::NumType::I32), // code offset,
-                ],
-                results: vec![],
-            };
-            for _ in 0..nargs {
-                t.params.push(ast::ValueType::NumType(ast::NumType::I32)); // type
-                t.params.push(ast::ValueType::NumType(ast::NumType::I32)); // value
-            }
-            self.module.add_type(&t)
-        };
-
-        let funcidx = self.module.add_function(&func, typeidx);
-        debug!("set_frame{} func at {}", nargs, funcidx);
-        self.map.insert(nargs, funcidx);
-
-        funcidx
-    }
-}
-
 struct CoredumpTransform {
     is_unwinding: u32,
     unreachable_shim: u32,
     write_coredump: u32,
-    set_frame_funcs: Arc<Mutex<LazySetFrameMap>>,
+    start_frame: u32,
+    add_i32_local: u32,
 }
 
 impl Visitor for CoredumpTransform {
@@ -181,8 +151,13 @@ impl Visitor for CoredumpTransform {
                 ctx.insert_node_before(ast::Instr::call(unreachable_shim));
             }
 
-            // call set_frame
+            // create stack frame
             {
+                let func_locals = ctx.module.func_locals(curr_funcidx);
+                let locals = locals_flatten(func_locals);
+
+                let param_count = curr_func_type.params.len();
+
                 // In Wasm DWARF the offset is relative to the start of the
                 // code section.
                 // https://yurydelendik.github.io/webassembly-dwarf/#pc
@@ -192,24 +167,25 @@ impl Visitor for CoredumpTransform {
                 // FIXME: we use the funcidx because the code offset isn't accurate
                 // or buggy.
                 ctx.insert_node_before(ast::Instr::i32_const(curr_funcidx as i64));
+                ctx.insert_node_before(ast::Instr::i32_const((locals.len() + param_count) as i64)); // value count
 
-                let func_locals = ctx.module.func_locals(curr_funcidx);
+                let start_frame = Arc::new(Mutex::new(ast::Value::new(self.start_frame)));
+                ctx.insert_node_before(ast::Instr::call(start_frame)); // value count
 
                 // TODO: for now we don't care about function arguments
                 // because seems that Rust doesn't really use them anyway.
-                for i in 0..curr_func_type.params.len() {
-                    ctx.insert_node_before(ast::Instr::i32_const(0x7F)); // type
+                for i in 0..param_count {
                     ctx.insert_node_before(ast::Instr::i32_const(669 + i as i64));
-                }
 
-                let locals = locals_flatten(func_locals);
+                    let add_i32_local = Arc::new(Mutex::new(ast::Value::new(self.add_i32_local)));
+                    ctx.insert_node_before(ast::Instr::call(add_i32_local));
+                }
 
                 // Collect the base/stack pointer, usually Rust stores it in
                 // the first few locals (so after the function params).
                 let mut local_count = curr_func_type.params.len() as u32;
 
                 for local in locals {
-                    ctx.insert_node_before(ast::Instr::i32_const(0x7F)); // type
                     ctx.insert_node_before(ast::Instr::local_get(local_count));
                     if local.value_type == ast::ValueType::NumType(ast::NumType::I64) {
                         ctx.insert_node_before(ast::Instr::i32_wrap_i64);
@@ -220,18 +196,12 @@ impl Visitor for CoredumpTransform {
                     if local.value_type == ast::ValueType::NumType(ast::NumType::F32) {
                         ctx.insert_node_before(ast::Instr::i32_trunc_f32_u);
                     }
+
+                    let add_i32_local = Arc::new(Mutex::new(ast::Value::new(self.add_i32_local)));
+                    ctx.insert_node_before(ast::Instr::call(add_i32_local));
+
                     local_count += 1;
-
-                    // Only collect up to 10 locals after the function args
-                    // because Rust usually stores the base addr there.
-                    if local_count >= curr_func_type.params.len() as u32 + 15 {
-                        break;
-                    }
                 }
-
-                let set_frame = self.set_frame_funcs.lock().unwrap().get(local_count);
-                let set_frame = Arc::new(Mutex::new(ast::Value::new(set_frame)));
-                ctx.insert_node_before(ast::Instr::call(set_frame));
             }
 
             // Return from the current function
@@ -276,8 +246,13 @@ impl Visitor for CoredumpTransform {
             {
                 let mut body = vec![];
 
-                // call set_frame
+                // create stack frame
                 {
+                    let func_locals = ctx.module.func_locals(curr_funcidx);
+                    let locals = locals_flatten(func_locals);
+
+                    let param_count = curr_func_type.params.len();
+
                     // In Wasm DWARF the offset is relative to the start of the
                     // code section.
                     // https://yurydelendik.github.io/webassembly-dwarf/#pc
@@ -287,24 +262,28 @@ impl Visitor for CoredumpTransform {
                     // FIXME: we use the funcidx because the code offset isn't accurate
                     // or buggy.
                     body.push(ast::Value::new(ast::Instr::i32_const(curr_funcidx as i64)));
+                    body.push(ast::Value::new(ast::Instr::i32_const(
+                        (locals.len() + param_count) as i64,
+                    )));
 
-                    let func_locals = ctx.module.func_locals(curr_funcidx);
+                    let start_frame = Arc::new(Mutex::new(ast::Value::new(self.start_frame)));
+                    body.push(ast::Value::new(ast::Instr::call(start_frame)));
 
                     // TODO: for now we don't care about function arguments
                     // because seems that Rust doesn't really use them anyway.
-                    for i in 0..curr_func_type.params.len() {
-                        body.push(ast::Value::new(ast::Instr::i32_const(0x7F))); // type
+                    for i in 0..param_count {
                         body.push(ast::Value::new(ast::Instr::i32_const(669 + i as i64)));
-                    }
 
-                    let locals = locals_flatten(func_locals);
+                        let add_i32_local =
+                            Arc::new(Mutex::new(ast::Value::new(self.add_i32_local)));
+                        body.push(ast::Value::new(ast::Instr::call(add_i32_local)));
+                    }
 
                     // Collect the base/stack pointer, usually Rust stores it in
                     // the first few locals (so after the function params).
                     let mut local_count = curr_func_type.params.len() as u32;
 
                     for local in locals {
-                        body.push(ast::Value::new(ast::Instr::i32_const(0x7F))); // type
                         body.push(ast::Value::new(ast::Instr::local_get(local_count)));
                         if local.value_type == ast::ValueType::NumType(ast::NumType::I64) {
                             body.push(ast::Value::new(ast::Instr::i32_wrap_i64));
@@ -315,18 +294,13 @@ impl Visitor for CoredumpTransform {
                         if local.value_type == ast::ValueType::NumType(ast::NumType::F32) {
                             body.push(ast::Value::new(ast::Instr::i32_trunc_f32_u));
                         }
+
+                        let add_i32_local =
+                            Arc::new(Mutex::new(ast::Value::new(self.add_i32_local)));
+                        body.push(ast::Value::new(ast::Instr::call(add_i32_local)));
+
                         local_count += 1;
-
-                        // Only collect up to 10 locals after the function args
-                        // because Rust usually stores the base addr there.
-                        if local_count >= curr_func_type.params.len() as u32 + 15 {
-                            break;
-                        }
                     }
-
-                    let set_frame = self.set_frame_funcs.lock().unwrap().get(local_count);
-                    let set_frame = Arc::new(Mutex::new(ast::Value::new(set_frame)));
-                    body.push(ast::Value::new(ast::Instr::call(set_frame)));
                 }
 
                 if ctx.module.is_func_exported(curr_funcidx) {
