@@ -98,8 +98,23 @@ fn write_section_import(buffer: &mut Vec<u8>, content: &Vec<ast::Import>) -> Res
     for import in content {
         write_utf8(buffer, &import.module);
         write_utf8(buffer, &import.name);
-        buffer.push(0x0);
-        write_unsigned_leb128(buffer, import.typeidx as u64);
+        match &import.import_type {
+            ast::ImportType::Func(funcidx) => {
+                buffer.push(0x0);
+                write_unsigned_leb128(buffer, *funcidx as u64);
+            }
+
+            ast::ImportType::Global(globaltype) => {
+                buffer.push(0x3);
+
+                write_value_type(buffer, &globaltype.valtype);
+                if globaltype.mutable {
+                    buffer.push(0x01);
+                } else {
+                    buffer.push(0x00);
+                }
+            }
+        }
     }
 
     Ok(())
