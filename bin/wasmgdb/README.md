@@ -1,6 +1,6 @@
 # wasmgdb
 
-> gdb for WebAssembly
+> Think gdb for WebAssembly
 
 ## Install
 
@@ -10,13 +10,13 @@ cargo install wasmgdb
 
 ## Usage
 
-Use [wasm-edit] to transform your module and, once WebAssembly traps, collect the
-WebAssembly memory and analyze the coredump.
+Use [wasm-coredump-rewriter] to transform your module and, once WebAssembly
+traps, collect the WebAssembly memory and analyze the coredump.
 
-## Analyze a coredump
+### Analyze a coredump
 
 ```
-wasmgdb <coredump> <source.wasm>
+wasmgdb source.wasm coredump.data
 ```
 
 ### Commands
@@ -94,4 +94,4 @@ List globals.
 - Cast: `(<type>) <hex-addr>`
 - String: `"<string>"`
 
-[wasm-edit]: https://github.com/xtuc/wasm-edit#coredump-generation
+[wasm-coredump-rewriter]: https://github.com/xtuc/wasm-coredump/tree/main/bin/rewriter
