@@ -64,10 +64,10 @@ pub fn rewrite(module_ast: Arc<ast::Module>) -> Result<(), BoxError> {
     debug!("unreachable_shim func at {}", unreachable_shim);
 
     let write_coredump = {
-        let typeidx = module.add_type(&ast::make_type!());
-        let func = runtime
+        let (func, t) = runtime
             .get_export_func("write_coredump")
             .expect("failed to get write_coredump");
+        let typeidx = module.add_type(&t);
         let funcidx = module.add_function(&func, typeidx);
         module.add_func_name(funcidx, "coredump/write_coredump");
         funcidx
@@ -75,10 +75,10 @@ pub fn rewrite(module_ast: Arc<ast::Module>) -> Result<(), BoxError> {
     debug!("write_coredump func at {}", write_coredump);
 
     let start_frame = {
-        let typeidx = module.add_type(&ast::make_type!( (I32, I32) -> () ));
-        let func = runtime
+        let (func, t) = runtime
             .get_export_func("start_frame")
             .expect("failed to get start_frame");
+        let typeidx = module.add_type(&t);
         let funcidx = module.add_function(&func, typeidx);
         module.add_func_name(funcidx, "coredump/start_frame");
         funcidx
@@ -86,10 +86,10 @@ pub fn rewrite(module_ast: Arc<ast::Module>) -> Result<(), BoxError> {
     debug!("start_frame func at {}", start_frame);
 
     let add_i32_local = {
-        let typeidx = module.add_type(&ast::make_type!( (I32) -> () ));
-        let func = runtime
+        let (func, t) = runtime
             .get_export_func("add_i32_local")
             .expect("failed to get add_i32_local");
+        let typeidx = module.add_type(&t);
         let funcidx = module.add_function(&func, typeidx);
         module.add_func_name(funcidx, "coredump/add_i32_local");
         funcidx
@@ -97,10 +97,10 @@ pub fn rewrite(module_ast: Arc<ast::Module>) -> Result<(), BoxError> {
     debug!("add_i32_local func at {}", add_i32_local);
 
     let add_f32_local = {
-        let typeidx = module.add_type(&ast::make_type!( (F32) -> () ));
-        let func = runtime
+        let (func, t) = runtime
             .get_export_func("add_f32_local")
             .expect("failed to get add_f32_local");
+        let typeidx = module.add_type(&t);
         let funcidx = module.add_function(&func, typeidx);
         module.add_func_name(funcidx, "coredump/add_f32_local");
         funcidx
@@ -108,10 +108,10 @@ pub fn rewrite(module_ast: Arc<ast::Module>) -> Result<(), BoxError> {
     debug!("add_f32_local func at {}", add_f32_local);
 
     let add_f64_local = {
-        let typeidx = module.add_type(&ast::make_type!( (F64) -> () ));
-        let func = runtime
+        let (func, t) = runtime
             .get_export_func("add_f64_local")
             .expect("failed to get add_f64_local");
+        let typeidx = module.add_type(&t);
         let funcidx = module.add_function(&func, typeidx);
         module.add_func_name(funcidx, "coredump/add_f64_local");
         funcidx
@@ -119,10 +119,10 @@ pub fn rewrite(module_ast: Arc<ast::Module>) -> Result<(), BoxError> {
     debug!("add_f64_local func at {}", add_f64_local);
 
     let add_i64_local = {
-        let typeidx = module.add_type(&ast::make_type!( (I64) -> () ));
-        let func = runtime
+        let (func, t) = runtime
             .get_export_func("add_i64_local")
             .expect("failed to get add_i64_local");
+        let typeidx = module.add_type(&t);
         let funcidx = module.add_function(&func, typeidx);
         module.add_func_name(funcidx, "coredump/add_i64_local");
         funcidx

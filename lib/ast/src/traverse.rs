@@ -226,16 +226,18 @@ impl WasmModule {
         false
     }
 
-    pub fn get_export_func(&self, name: &str) -> Result<&ast::Code, BoxError> {
+    pub fn get_export_func(&self, name: &str) -> Result<(&ast::Code, ast::Type), BoxError> {
         for export in &self.exports {
             if export.name == name {
                 match &export.descr {
                     ast::ExportDescr::Func(f) => {
                         let funcidx = &*f.lock().unwrap();
-                        return self
+                        let code = self
                             .func_code
                             .get(funcidx)
-                            .ok_or("exported function not found".into());
+                            .ok_or("exported function not found")?;
+                        let t = self.get_func_type(*funcidx);
+                        return Ok((code, t.clone()));
                     }
                     _ => return Err("export is not a function".into()),
                 }
