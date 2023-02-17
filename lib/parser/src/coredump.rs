@@ -66,7 +66,27 @@ pub(crate) fn decode_stack_frame<'a>(
     let mut locals = Vec::with_capacity(count_local as usize);
     let mut ctx = ctx;
     for _ in 0..count_local {
-        let res = ctx.read_u32()?;
+        let res = ctx.read_u8()?;
+        ctx = res.0;
+        let t = res.1;
+
+        let res = match t {
+            0x01 => (ctx, ast::coredump::Value::Missing),
+
+            0x7F => {
+                let (ctx, v) = ctx.read_u32()?;
+                (ctx, ast::coredump::Value::I32(v as i32))
+            }
+
+            0x7E | 0x7D | 0x7C => {
+                todo!()
+            }
+
+            b => {
+                unimplemented!("value type {}", b)
+            }
+        };
+
         ctx = res.0;
         locals.push(res.1);
     }

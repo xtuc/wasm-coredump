@@ -7,7 +7,7 @@
 //!
 //! Where a `frame` is:
 //!
-//! | code offset (u32) | count local (u32) | local* (u32) |
+//! | code offset (u32) | count local (u32) | local* (u8 u32) |
 
 use core_wasm_ast as ast;
 use core_wasm_ast::traverse::{self, Visitor, VisitorContext, WasmModule};
@@ -132,6 +132,7 @@ impl LazySetFrameMap {
             .get_export_func(&func_name)
             .expect(&format!("failed to get {}", func_name));
 
+        // FIXME: extract the type from the runtime.wasm module
         let typeidx = {
             let mut t = ast::Type {
                 params: vec![
@@ -140,7 +141,8 @@ impl LazySetFrameMap {
                 results: vec![],
             };
             for _ in 0..nargs {
-                t.params.push(ast::ValueType::NumType(ast::NumType::I32));
+                t.params.push(ast::ValueType::NumType(ast::NumType::I32)); // type
+                t.params.push(ast::ValueType::NumType(ast::NumType::I32)); // value
             }
             self.module.add_type(&t)
         };
@@ -196,6 +198,7 @@ impl Visitor for CoredumpTransform {
                 // TODO: for now we don't care about function arguments
                 // because seems that Rust doesn't really use them anyway.
                 for i in 0..curr_func_type.params.len() {
+                    ctx.insert_node_before(ast::Instr::i32_const(0x7F)); // type
                     ctx.insert_node_before(ast::Instr::i32_const(669 + i as i64));
                 }
 
@@ -206,6 +209,7 @@ impl Visitor for CoredumpTransform {
                 let mut local_count = curr_func_type.params.len() as u32;
 
                 for local in locals {
+                    ctx.insert_node_before(ast::Instr::i32_const(0x7F)); // type
                     ctx.insert_node_before(ast::Instr::local_get(local_count));
                     if local.value_type == ast::ValueType::NumType(ast::NumType::I64) {
                         ctx.insert_node_before(ast::Instr::i32_wrap_i64);
@@ -289,6 +293,7 @@ impl Visitor for CoredumpTransform {
                     // TODO: for now we don't care about function arguments
                     // because seems that Rust doesn't really use them anyway.
                     for i in 0..curr_func_type.params.len() {
+                        body.push(ast::Value::new(ast::Instr::i32_const(0x7F))); // type
                         body.push(ast::Value::new(ast::Instr::i32_const(669 + i as i64)));
                     }
 
@@ -299,6 +304,7 @@ impl Visitor for CoredumpTransform {
                     let mut local_count = curr_func_type.params.len() as u32;
 
                     for local in locals {
+                        body.push(ast::Value::new(ast::Instr::i32_const(0x7F))); // type
                         body.push(ast::Value::new(ast::Instr::local_get(local_count)));
                         if local.value_type == ast::ValueType::NumType(ast::NumType::I64) {
                             body.push(ast::Value::new(ast::Instr::i32_wrap_i64));

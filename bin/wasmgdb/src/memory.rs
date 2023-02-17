@@ -41,7 +41,7 @@ pub(crate) fn get_addr<'a>(
     match base {
         ddbug_parser::DataLocation::WasmLocal(base_local) => {
             if let Some(base_addr) = frame.locals.get(*base_local as usize) {
-                Ok(base_addr + *offset_from_base as u32)
+                Ok((base_addr.as_i32() + *offset_from_base as i32) as u32)
             } else {
                 Err(format!("failed to load base addr in local {}", base_local).into())
             }

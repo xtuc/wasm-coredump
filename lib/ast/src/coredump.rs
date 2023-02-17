@@ -13,8 +13,26 @@ pub struct ThreadInfo {
 #[derive(Debug, Clone)]
 pub struct StackFrame {
     pub code_offset: u32,
-    pub locals: Vec<u32>,
-    pub stack: Vec<u32>,
+    pub locals: Vec<Value>,
+    pub stack: Vec<Value>,
+}
+
+#[derive(Debug, Clone)]
+pub enum Value {
+    Missing,
+    I32(i32),
+    I64(i64),
+    F32(f32),
+    F64(f64),
+}
+
+impl Value {
+    pub fn as_i32(&self) -> i32 {
+        match self {
+            Value::I32(v) => *v,
+            _ => unreachable!(),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]

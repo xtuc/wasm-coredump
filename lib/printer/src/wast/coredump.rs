@@ -60,10 +60,57 @@ fn dump_frame<W: Write>(
     {
         let tab = TAB.repeat(depth + 1);
         for local in &frame.locals {
-            writeln!(out, "{}(local u32 {})", tab, local)?;
+            write!(out, "{}(local ", tab)?;
+            dump_value_type(out, 0, local)?;
+            write!(out, " ")?;
+            dump_value(out, 0, local)?;
+            writeln!(out, ")")?;
         }
     }
     writeln!(out, "{})", tab)?;
+    Ok(())
+}
+
+fn dump_value<W: Write>(
+    out: &mut W,
+    _depth: usize,
+    value: &ast::coredump::Value,
+) -> Result<(), BoxError> {
+    match value {
+        ast::coredump::Value::Missing => {
+            write!(out, "(optimized out)")?;
+        }
+        ast::coredump::Value::I32(v) => {
+            write!(out, "{}", v)?;
+        }
+        ast::coredump::Value::I64(_v) => {
+            todo!()
+        }
+        ast::coredump::Value::F32(_v) => {
+            todo!()
+        }
+        ast::coredump::Value::F64(_v) => {
+            todo!()
+        }
+    }
+
+    Ok(())
+}
+
+fn dump_value_type<W: Write>(
+    out: &mut W,
+    _depth: usize,
+    value: &ast::coredump::Value,
+) -> Result<(), BoxError> {
+    let v = match value {
+        ast::coredump::Value::Missing => "",
+        ast::coredump::Value::I32(_) => "i32",
+        ast::coredump::Value::I64(_) => "i64",
+        ast::coredump::Value::F32(_) => "f32",
+        ast::coredump::Value::F64(_) => "f64",
+    };
+    write!(out, "{}", v)?;
+
     Ok(())
 }
 
