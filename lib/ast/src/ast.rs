@@ -433,7 +433,13 @@ pub struct Type {
 pub struct Import {
     pub module: String,
     pub name: String,
-    pub typeidx: u32,
+    pub import_type: ImportType,
+}
+
+#[derive(Debug, Clone)]
+pub enum ImportType {
+    Func(u32),
+    Global(GlobalType),
 }
 
 #[derive(Debug, Clone)]

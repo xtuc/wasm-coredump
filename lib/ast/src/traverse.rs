@@ -32,6 +32,8 @@ impl WasmModule {
         let mut func_code = HashMap::new();
         let mut func_names = HashMap::new();
 
+        let mut funcidx = 0;
+
         for section in inner.sections.lock().unwrap().iter() {
             match &section.value {
                 ast::Section::Type((_size, content)) => {
@@ -44,6 +46,13 @@ impl WasmModule {
 
                 ast::Section::Import((_size, content)) => {
                     imports = content.lock().unwrap().clone();
+
+                    for import in &imports {
+                        match import.import_type {
+                            ast::ImportType::Func(_) => funcidx += 1,
+                            _ => {}
+                        }
+                    }
                 }
 
                 ast::Section::Global((_size, content)) => {
@@ -59,8 +68,6 @@ impl WasmModule {
                 }
 
                 ast::Section::Code((_section_size, content)) => {
-                    let mut funcidx = imports.len() as u32;
-
                     for c in &content.lock().unwrap().value {
                         func_code.insert(funcidx, c.clone());
 
@@ -99,6 +106,7 @@ impl WasmModule {
         let mut stacks = vec![];
         let mut process_info = None;
         let mut memory = vec![];
+        let mut globals = vec![];
 
         for section in self.inner.sections.lock().unwrap().iter() {
             match &section.value {
@@ -113,6 +121,10 @@ impl WasmModule {
 
                 ast::Section::Memory((_section_size, content)) => {
                     memory = content.clone();
+                }
+
+                ast::Section::Global((_section_size, content)) => {
+                    globals = content.lock().unwrap().clone();
                 }
 
                 ast::Section::Custom((_size, section)) => match &*section.lock().unwrap() {
@@ -135,6 +147,7 @@ impl WasmModule {
             stacks,
             process_info,
             memory,
+            globals,
         })
     }
 
@@ -241,9 +254,7 @@ impl WasmModule {
         let func_to_typeidx = self.func_to_typeidx.lock().unwrap();
 
         if (funcidx as usize) < self.imports.len() {
-            // Func is an imported function
-            let import = &self.imports[funcidx as usize];
-            import.typeidx
+            todo!()
         } else {
             // Func is an implemented function
             let funcidx = funcidx as usize - self.imports.len();

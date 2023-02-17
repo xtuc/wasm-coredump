@@ -28,5 +28,6 @@ pub struct Coredump {
     pub process_info: ProcessInfo,
     pub stacks: Vec<CoreStack>,
     pub memory: Vec<ast::Memory>,
+    pub globals: Vec<ast::Global>,
     pub data: Vec<u8>,
 }

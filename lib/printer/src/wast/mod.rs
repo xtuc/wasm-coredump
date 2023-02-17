@@ -74,10 +74,18 @@ impl<'a, W: Write> WastPrinter<'a, W> {
         self.print_name(&node.name)?;
         write!(self.out, " ")?;
 
-        if let Some(t) = self.module.get_type(node.typeidx) {
-            self.print_type(&t)?;
-        } else {
-            write!(self.out, "(type {})", node.typeidx)?;
+        match &node.import_type {
+            ast::ImportType::Func(typeidx) => {
+                if let Some(t) = self.module.get_type(*typeidx) {
+                    self.print_type(&t)?;
+                } else {
+                    write!(self.out, "(type {})", typeidx)?;
+                }
+            }
+
+            ast::ImportType::Global(_globaltype) => {
+                write!(self.out, "(global)")?;
+            }
         }
 
         write!(self.out, ")")?;

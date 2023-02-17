@@ -368,15 +368,22 @@ fn decode_import<'a>(ctx: InputContext<'a>) -> IResult<InputContext<'a>, ast::Im
     let (ctx, name) = decode_name(ctx)?;
 
     let (ctx, descr_t) = ctx.read_u8()?;
-    let (ctx, typeidx) = match descr_t {
-        0 => ctx.read_leb128()?,
+    let (ctx, import_type) = match descr_t {
+        0x00 => {
+            let (ctx, typeidx) = ctx.read_leb128()?;
+            (ctx, ast::ImportType::Func(typeidx))
+        }
+        0x03 => {
+            let (ctx, globaltype) = decode_global_type(ctx)?;
+            (ctx, ast::ImportType::Global(globaltype))
+        }
         _ => unimplemented!("import description: {:x}", descr_t),
     };
 
     let import = ast::Import {
         module,
         name,
-        typeidx,
+        import_type,
     };
     Ok((ctx, import))
 }
