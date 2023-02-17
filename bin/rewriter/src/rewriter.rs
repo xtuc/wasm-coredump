@@ -88,12 +88,43 @@ pub fn rewrite(module_ast: Arc<ast::Module>) -> Result<(), BoxError> {
     };
     debug!("add_i32_local func at {}", add_i32_local);
 
+    let add_f32_local = {
+        let typeidx = module.add_type(&ast::make_type!( (F32) -> () ));
+        let func = runtime
+            .get_export_func("add_f32_local")
+            .expect("failed to get add_f32_local");
+        module.add_function(&func, typeidx)
+    };
+    debug!("add_f32_local func at {}", add_f32_local);
+
+    let add_f64_local = {
+        let typeidx = module.add_type(&ast::make_type!( (F64) -> () ));
+        let func = runtime
+            .get_export_func("add_f64_local")
+            .expect("failed to get add_f64_local");
+        module.add_function(&func, typeidx)
+    };
+    debug!("add_f64_local func at {}", add_f64_local);
+
+    let add_i64_local = {
+        let typeidx = module.add_type(&ast::make_type!( (I64) -> () ));
+        let func = runtime
+            .get_export_func("add_i64_local")
+            .expect("failed to get add_i64_local");
+        module.add_function(&func, typeidx)
+    };
+    debug!("add_i64_local func at {}", add_i64_local);
+
     let visitor = CoredumpTransform {
         is_unwinding,
         unreachable_shim,
         write_coredump,
         start_frame,
+
         add_i32_local,
+        add_i64_local,
+        add_f32_local,
+        add_f64_local,
     };
     traverse::traverse(Arc::clone(&module_ast), Arc::new(visitor));
 
@@ -129,7 +160,11 @@ struct CoredumpTransform {
     unreachable_shim: u32,
     write_coredump: u32,
     start_frame: u32,
+
     add_i32_local: u32,
+    add_i64_local: u32,
+    add_f32_local: u32,
+    add_f64_local: u32,
 }
 
 impl Visitor for CoredumpTransform {
@@ -187,18 +222,30 @@ impl Visitor for CoredumpTransform {
 
                 for local in locals {
                     ctx.insert_node_before(ast::Instr::local_get(local_count));
+
                     if local.value_type == ast::ValueType::NumType(ast::NumType::I64) {
-                        ctx.insert_node_before(ast::Instr::i32_wrap_i64);
-                    }
-                    if local.value_type == ast::ValueType::NumType(ast::NumType::F64) {
-                        ctx.insert_node_before(ast::Instr::i32_trunc_f64_u);
-                    }
-                    if local.value_type == ast::ValueType::NumType(ast::NumType::F32) {
-                        ctx.insert_node_before(ast::Instr::i32_trunc_f32_u);
+                        let add_i64_local =
+                            Arc::new(Mutex::new(ast::Value::new(self.add_i64_local)));
+                        ctx.insert_node_before(ast::Instr::call(add_i64_local));
                     }
 
-                    let add_i32_local = Arc::new(Mutex::new(ast::Value::new(self.add_i32_local)));
-                    ctx.insert_node_before(ast::Instr::call(add_i32_local));
+                    if local.value_type == ast::ValueType::NumType(ast::NumType::F64) {
+                        let add_f64_local =
+                            Arc::new(Mutex::new(ast::Value::new(self.add_f64_local)));
+                        ctx.insert_node_before(ast::Instr::call(add_f64_local));
+                    }
+
+                    if local.value_type == ast::ValueType::NumType(ast::NumType::F32) {
+                        let add_f32_local =
+                            Arc::new(Mutex::new(ast::Value::new(self.add_f32_local)));
+                        ctx.insert_node_before(ast::Instr::call(add_f32_local));
+                    }
+
+                    if local.value_type == ast::ValueType::NumType(ast::NumType::I32) {
+                        let add_i32_local =
+                            Arc::new(Mutex::new(ast::Value::new(self.add_i32_local)));
+                        ctx.insert_node_before(ast::Instr::call(add_i32_local));
+                    }
 
                     local_count += 1;
                 }
@@ -285,19 +332,30 @@ impl Visitor for CoredumpTransform {
 
                     for local in locals {
                         body.push(ast::Value::new(ast::Instr::local_get(local_count)));
+
                         if local.value_type == ast::ValueType::NumType(ast::NumType::I64) {
-                            body.push(ast::Value::new(ast::Instr::i32_wrap_i64));
-                        }
-                        if local.value_type == ast::ValueType::NumType(ast::NumType::F64) {
-                            body.push(ast::Value::new(ast::Instr::i32_trunc_f64_u));
-                        }
-                        if local.value_type == ast::ValueType::NumType(ast::NumType::F32) {
-                            body.push(ast::Value::new(ast::Instr::i32_trunc_f32_u));
+                            let add_i64_local =
+                                Arc::new(Mutex::new(ast::Value::new(self.add_i64_local)));
+                            body.push(ast::Value::new(ast::Instr::call(add_i64_local)));
                         }
 
-                        let add_i32_local =
-                            Arc::new(Mutex::new(ast::Value::new(self.add_i32_local)));
-                        body.push(ast::Value::new(ast::Instr::call(add_i32_local)));
+                        if local.value_type == ast::ValueType::NumType(ast::NumType::F64) {
+                            let add_f64_local =
+                                Arc::new(Mutex::new(ast::Value::new(self.add_f64_local)));
+                            body.push(ast::Value::new(ast::Instr::call(add_f64_local)));
+                        }
+
+                        if local.value_type == ast::ValueType::NumType(ast::NumType::F32) {
+                            let add_f32_local =
+                                Arc::new(Mutex::new(ast::Value::new(self.add_f32_local)));
+                            body.push(ast::Value::new(ast::Instr::call(add_f32_local)));
+                        }
+
+                        if local.value_type == ast::ValueType::NumType(ast::NumType::I32) {
+                            let add_i32_local =
+                                Arc::new(Mutex::new(ast::Value::new(self.add_i32_local)));
+                            body.push(ast::Value::new(ast::Instr::call(add_i32_local)));
+                        }
 
                         local_count += 1;
                     }

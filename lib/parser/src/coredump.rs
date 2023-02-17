@@ -74,12 +74,23 @@ pub(crate) fn decode_stack_frame<'a>(
             0x01 => (ctx, ast::coredump::Value::Missing),
 
             0x7F => {
-                let (ctx, v) = ctx.read_u32()?;
-                (ctx, ast::coredump::Value::I32(v as i32))
+                let (ctx, v) = ctx.read_i32()?;
+                (ctx, ast::coredump::Value::I32(v))
             }
 
-            0x7E | 0x7D | 0x7C => {
-                todo!()
+            0x7E => {
+                let (ctx, v) = ctx.read_i64()?;
+                (ctx, ast::coredump::Value::I64(v))
+            }
+
+            0x7D => {
+                let (ctx, v) = ctx.read_f32()?;
+                (ctx, ast::coredump::Value::F32(v))
+            }
+
+            0x7C => {
+                let (ctx, v) = ctx.read_f64()?;
+                (ctx, ast::coredump::Value::F64(v))
             }
 
             b => {

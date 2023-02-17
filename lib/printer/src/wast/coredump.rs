@@ -83,14 +83,14 @@ fn dump_value<W: Write>(
         ast::coredump::Value::I32(v) => {
             write!(out, "{}", v)?;
         }
-        ast::coredump::Value::I64(_v) => {
-            todo!()
+        ast::coredump::Value::I64(v) => {
+            write!(out, "{}", v)?;
         }
-        ast::coredump::Value::F32(_v) => {
-            todo!()
+        ast::coredump::Value::F32(v) => {
+            write!(out, "{}", v)?;
         }
-        ast::coredump::Value::F64(_v) => {
-            todo!()
+        ast::coredump::Value::F64(v) => {
+            write!(out, "{}", v)?;
         }
     }
 

@@ -42,6 +42,18 @@ impl<'a> InputContext<'a> {
         Ok((input, value))
     }
 
+    fn read_i32(self) -> IResult<InputContext<'a>, i32> {
+        let (input, bytes) = self.read_bytes(4usize)?;
+        let value = i32::from_le_bytes(bytes.try_into().unwrap());
+        Ok((input, value))
+    }
+
+    fn read_i64(self) -> IResult<InputContext<'a>, i64> {
+        let (input, bytes) = self.read_bytes(8usize)?;
+        let value = i64::from_le_bytes(bytes.try_into().unwrap());
+        Ok((input, value))
+    }
+
     fn read_u8(self) -> IResult<InputContext<'a>, u8> {
         let (input, bytes) = self.read_bytes(1usize)?;
         let value = u8::from_le_bytes(bytes.try_into().unwrap());

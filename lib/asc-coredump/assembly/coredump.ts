@@ -57,6 +57,16 @@ export function start_frame(code_offset: u32, local_count: u32): void {
   set_frames_ptr(ptr)
 }
 
+export function add_missing_local(): void {
+  let ptr = get_frames_ptr();
+
+  // Type
+  store<u8>(ptr, 0x01)
+  ptr += 1;
+
+  set_frames_ptr(ptr)
+}
+
 export function add_i32_local(v: i32): void {
   let ptr = get_frames_ptr();
 
@@ -66,7 +76,49 @@ export function add_i32_local(v: i32): void {
 
   // Value
   store<i32>(ptr, v)
-  ptr += 4;
+  ptr += sizeof<i32>();
+
+  set_frames_ptr(ptr)
+}
+
+export function add_f32_local(v: f32): void {
+  let ptr = get_frames_ptr();
+
+  // Type
+  store<u8>(ptr, 0x7D)
+  ptr += 1;
+
+  // Value
+  store<f32>(ptr, v)
+  ptr += sizeof<f32>();
+
+  set_frames_ptr(ptr)
+}
+
+export function add_f64_local(v: f64): void {
+  let ptr = get_frames_ptr();
+
+  // Type
+  store<u8>(ptr, 0x7C)
+  ptr += 1;
+
+  // Value
+  store<f64>(ptr, v)
+  ptr += sizeof<f64>();
+
+  set_frames_ptr(ptr)
+}
+
+export function add_i64_local(v: i64): void {
+  let ptr = get_frames_ptr();
+
+  // Type
+  store<u8>(ptr, 0x7E)
+  ptr += 1;
+
+  // Value
+  store<i64>(ptr, v)
+  ptr += sizeof<i64>();
 
   set_frames_ptr(ptr)
 }
