@@ -1,6 +1,6 @@
 [package]
 name = "wasmgdb"
-version = "0.1.9"
+version = "0.1.10"
 edition = "2021"
 description = "gdb for WebAssembly"
 authors = ["Sven Sauleau <sven@sauleau.com>"]
@@ -16,11 +16,11 @@ wasmgdb_ddbug_parser = { version = "0.3.1" }
 log = "0.4.17"
 nom = "7.1.1"
 hex = "0.4.3"
-core-wasm-ast = { path = "../../lib/ast", version = "0.1.9" }
-wasm-parser = { path = "../../lib/parser", version = "0.1.9" }
-wasm-printer = { path = "../../lib/printer", version = "0.1.9" }
-wasm-coredump-rewriter = { path = "../../bin/rewriter", version = "0.1.9" }
-wasm-coredump-types = { path = "../../lib/coredump-types", version = "0.1.9" }
+core-wasm-ast = { path = "../../lib/ast", version = "0.1.10" }
+wasm-parser = { path = "../../lib/parser", version = "0.1.10" }
+wasm-printer = { path = "../../lib/printer", version = "0.1.10" }
+wasm-coredump-rewriter = { path = "../../bin/rewriter", version = "0.1.10" }
+wasm-coredump-types = { path = "../../lib/coredump-types", version = "0.1.10" }
 clap = { version = "4.1.4", features = ["derive"] }
 wasmtime = "5.0.0"
 wasmtime-wasi = "5.0.0"

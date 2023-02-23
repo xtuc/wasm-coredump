@@ -1,6 +1,6 @@
 [package]
 name = "wasm-parser"
-version = "0.1.9"
+version = "0.1.10"
 edition = "2021"
 authors = ["Sven Sauleau <sven@sauleau.com>"]
 license = "MIT"
@@ -13,5 +13,5 @@ leb128 = "0.2.5"
 nom = "7"
 env_logger = "0.9.1"
 log = "0.4.17"
-core-wasm-ast = { path = "../ast", version = "0.1.9" }
-wasm-coredump-types = { path = "../coredump-types", version = "0.1.9" }
+core-wasm-ast = { path = "../ast", version = "0.1.10" }
+wasm-coredump-types = { path = "../coredump-types", version = "0.1.10" }
