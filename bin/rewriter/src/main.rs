@@ -31,7 +31,8 @@ fn main() -> Result<(), BoxError> {
     info!("transform: {:.2?}", elapsed);
 
     let now = Instant::now();
-    input = wasm_printer::wasm::print(&module)?;
+    input = wasm_printer::wasm::print(&module)
+        .map_err(|err| format!("failed to print Wasm module: {}", err))?;
     let elapsed = now.elapsed();
     info!("print: {:.2?}", elapsed);
 

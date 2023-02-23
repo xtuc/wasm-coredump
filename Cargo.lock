@@ -1491,6 +1491,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "wasm-coredump-builder"
+version = "0.1.8"
+dependencies = [
+ "core-wasm-ast",
+ "wasm-printer",
+]
+
+[[package]]
 name = "wasm-coredump-rewriter"
 version = "0.1.8"
 dependencies = [

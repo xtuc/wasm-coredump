@@ -1,0 +1,12 @@
+[package]
+name = "wasm-coredump-builder"
+version = "0.1.8"
+edition = "2021"
+authors = ["Sven Sauleau <sven@sauleau.com>"]
+license = "MIT"
+keywords = ["wasm", "rust", "coredump"]
+description = "Wasm coredump builder API for Rust"
+
+[dependencies]
+core-wasm-ast = { path = "../ast", version = "0.1.8" }
+wasm-printer = { path = "../printer", version = "0.1.8" }

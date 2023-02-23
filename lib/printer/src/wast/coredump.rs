@@ -14,7 +14,9 @@ pub fn dump_coredump<W: Write>(
     for stack in &coredump.stacks {
         dump_stack(out, 1, &stack)?;
     }
-    dump_data(out, 1, &coredump.data)?;
+    if !coredump.data.is_empty() {
+        dump_data(out, 1, &coredump.data)?;
+    }
     dump_memory(out, 1, &coredump.memory)?;
     write!(out, ")")?;
 
@@ -56,18 +58,23 @@ fn dump_frame<W: Write>(
     frame: &ast::coredump::StackFrame,
 ) -> Result<(), BoxError> {
     let tab = TAB.repeat(depth);
-    writeln!(out, "{}(func {}", tab, frame.code_offset)?;
-    {
-        let tab = TAB.repeat(depth + 1);
-        for local in &frame.locals {
-            write!(out, "{}(local ", tab)?;
-            dump_value_type(out, 0, local)?;
-            write!(out, " ")?;
-            dump_value(out, 0, local)?;
-            writeln!(out, ")")?;
+
+    if frame.locals.len() > 0 {
+        writeln!(out, "{}(func {}", tab, frame.code_offset)?;
+        {
+            let tab = TAB.repeat(depth + 1);
+            for local in &frame.locals {
+                write!(out, "{}(local ", tab)?;
+                dump_value_type(out, 0, local)?;
+                write!(out, " ")?;
+                dump_value(out, 0, local)?;
+                writeln!(out, ")")?;
+            }
         }
+        writeln!(out, "{})", tab)?;
+    } else {
+        writeln!(out, "{}(func {})", tab, frame.code_offset)?;
     }
-    writeln!(out, "{})", tab)?;
     Ok(())
 }
 

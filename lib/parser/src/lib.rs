@@ -1084,7 +1084,7 @@ fn decode_section<'a>(ctx: InputContext<'a>) -> IResult<InputContext<'a>, ast::S
         0 => match decode_section_custom(section_bytes.clone()) {
             Ok((_, res)) => ast::Section::Custom((section_size, Arc::new(Mutex::new(res)))),
             Err(err) => {
-                warn!("failed to parse custom section: {}. Ignoring.", err);
+                eprintln!("failed to parse custom section: {}. Ignoring.", err);
                 ast::Section::Unknown((id, size, section_bytes.input.to_vec()))
             }
         },

@@ -3,7 +3,9 @@ use core_wasm_ast as ast;
 use log::warn;
 use std::io::Write;
 
-type BoxError = Box<dyn std::error::Error>;
+mod coredump;
+
+type BoxError = Box<dyn std::error::Error + Sync + Send>;
 
 pub fn print(module: &ast::Module) -> Result<Vec<u8>, BoxError> {
     let mut buffer = vec![];
@@ -150,7 +152,7 @@ fn write_reftype(buffer: &mut Vec<u8>, typeref: &ast::Reftype) {
     buffer.push(b);
 }
 
-fn write_utf8(buffer: &mut Vec<u8>, v: &str) {
+pub(crate) fn write_utf8(buffer: &mut Vec<u8>, v: &str) {
     let bytes = v.as_bytes().to_vec();
     write_vec_len(buffer, &bytes);
     buffer.write_all(&bytes).unwrap();
@@ -281,8 +283,12 @@ fn write_section_custom(
         }
         ast::CustomSection::Name(content) => write_section_custom_name(buffer, &content)?,
 
-        ast::CustomSection::CoredumpCore(_) | ast::CustomSection::CoredumpCoreStack(_) => {
-            unreachable!()
+        ast::CustomSection::CoredumpCore(content) => {
+            coredump::write_section_custom_coredump(buffer, content)?;
+        }
+
+        ast::CustomSection::CoredumpCoreStack(content) => {
+            coredump::write_section_custom_coredump_stack(buffer, content)?;
         }
     }
 
@@ -747,7 +753,7 @@ fn write_unsigned_leb128_at_offset(bytes: &mut Vec<u8>, offset: usize, n: usize)
     }
 }
 
-fn write_unsigned_leb128(buffer: &mut Vec<u8>, n: u64) {
+pub(crate) fn write_unsigned_leb128(buffer: &mut Vec<u8>, n: u64) {
     leb128::write::unsigned(buffer, n).expect("could not write LEB128");
 }
 
@@ -759,6 +765,10 @@ fn write_float_f64(buffer: &mut Vec<u8>, n: f64) {
     let mut b = [0; 8];
     LittleEndian::write_f64(&mut b, n);
     buffer.extend(b.iter())
+}
+
+pub(crate) fn write_u32(buffer: &mut Vec<u8>, n: u32) {
+    buffer.extend_from_slice(&n.to_le_bytes());
 }
 
 fn write_float_f32(buffer: &mut Vec<u8>, n: f32) {

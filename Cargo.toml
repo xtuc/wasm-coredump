@@ -3,5 +3,6 @@ members = [
   "lib/ast",
   "lib/parser",
   "lib/printer",
+  "lib/coredump-builder",
   "bin/*",
 ]
