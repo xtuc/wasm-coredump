@@ -26,3 +26,4 @@ publish:
 	cd ./lib/printer && cargo publish
 	cd ./bin/rewriter && cargo publish --allow-dirty
 	cd ./bin/wasmgdb && cargo publish
+	cd ./lib/coredump-builder && cargo publish
