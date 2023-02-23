@@ -259,6 +259,7 @@ dependencies = [
  "log",
  "num_cpus",
  "threadpool",
+ "wasm-coredump-types",
 ]
 
 [[package]]
@@ -1494,8 +1495,17 @@ dependencies = [
 name = "wasm-coredump-builder"
 version = "0.1.9"
 dependencies = [
- "core-wasm-ast",
- "wasm-printer",
+ "wasm-coredump-encoder",
+ "wasm-coredump-types",
+ "wasm-encoder 0.23.0",
+]
+
+[[package]]
+name = "wasm-coredump-encoder"
+version = "0.1.9"
+dependencies = [
+ "leb128",
+ "wasm-coredump-types",
 ]
 
 [[package]]
@@ -1510,10 +1520,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "wasm-coredump-types"
+version = "0.1.9"
+
+[[package]]
 name = "wasm-encoder"
 version = "0.22.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ef126be0e14bdf355ac1a8b41afc89195289e5c7179f80118e3abddb472f0810"
+dependencies = [
+ "leb128",
+]
+
+[[package]]
+name = "wasm-encoder"
+version = "0.23.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1c3e4bc09095436c8e7584d86d33e6c3ee67045af8fb262cbb9cc321de553428"
 dependencies = [
  "leb128",
 ]
@@ -1527,6 +1550,7 @@ dependencies = [
  "leb128",
  "log",
  "nom",
+ "wasm-coredump-types",
 ]
 
 [[package]]
@@ -1538,6 +1562,8 @@ dependencies = [
  "core-wasm-ast",
  "leb128",
  "log",
+ "wasm-coredump-encoder",
+ "wasm-coredump-types",
 ]
 
 [[package]]
@@ -1553,6 +1579,7 @@ dependencies = [
  "log",
  "nom",
  "wasm-coredump-rewriter",
+ "wasm-coredump-types",
  "wasm-parser",
  "wasm-printer",
  "wasmgdb_ddbug_parser",
@@ -1849,7 +1876,7 @@ dependencies = [
  "leb128",
  "memchr",
  "unicode-width",
- "wasm-encoder",
+ "wasm-encoder 0.22.0",
 ]
 
 [[package]]

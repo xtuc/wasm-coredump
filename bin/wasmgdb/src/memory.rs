@@ -14,7 +14,7 @@ pub(crate) fn get_member_addr<'a>(
 
 /// Get the absolute addr of a function parameter in memory
 pub(crate) fn get_param_addr<'a>(
-    frame: &core_wasm_ast::coredump::StackFrame,
+    frame: &wasm_coredump_types::StackFrame,
     func: &ddbug_parser::Function<'a>,
     param: &ddbug_parser::Parameter<'a>,
 ) -> Result<u32, BoxError> {
@@ -24,7 +24,7 @@ pub(crate) fn get_param_addr<'a>(
 
 /// Get the absolute addr in memory
 pub(crate) fn get_addr<'a>(
-    frame: &core_wasm_ast::coredump::StackFrame,
+    frame: &wasm_coredump_types::StackFrame,
     func: &ddbug_parser::Function<'a>,
     location: &ddbug_parser::DataLocation,
 ) -> Result<u32, BoxError> {

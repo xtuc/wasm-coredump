@@ -1,4 +1,3 @@
-use core_wasm_ast as ast;
 use std::fmt::Write;
 
 type BoxError = Box<dyn std::error::Error>;
@@ -7,7 +6,7 @@ const TAB: &str = "    ";
 
 pub fn dump_coredump<W: Write>(
     out: &mut W,
-    coredump: &ast::coredump::Coredump,
+    coredump: &wasm_coredump_types::Coredump,
 ) -> Result<(), BoxError> {
     writeln!(out, "(module (coredump)")?;
     dump_process_info(out, 1, &coredump.process_info)?;
@@ -26,7 +25,7 @@ pub fn dump_coredump<W: Write>(
 fn dump_process_info<W: Write>(
     out: &mut W,
     depth: usize,
-    process_info: &ast::coredump::ProcessInfo,
+    process_info: &wasm_coredump_types::ProcessInfo,
 ) -> Result<(), BoxError> {
     let tab = TAB.repeat(depth);
     write!(out, "{}(process", tab)?;
@@ -38,7 +37,7 @@ fn dump_process_info<W: Write>(
 fn dump_stack<W: Write>(
     out: &mut W,
     depth: usize,
-    stack: &ast::coredump::CoreStack,
+    stack: &wasm_coredump_types::CoreStack,
 ) -> Result<(), BoxError> {
     let tab = TAB.repeat(depth);
     write!(out, "{}(thread", tab)?;
@@ -55,7 +54,7 @@ fn dump_stack<W: Write>(
 fn dump_frame<W: Write>(
     out: &mut W,
     depth: usize,
-    frame: &ast::coredump::StackFrame,
+    frame: &wasm_coredump_types::StackFrame,
 ) -> Result<(), BoxError> {
     let tab = TAB.repeat(depth);
 
@@ -81,22 +80,22 @@ fn dump_frame<W: Write>(
 fn dump_value<W: Write>(
     out: &mut W,
     _depth: usize,
-    value: &ast::coredump::Value,
+    value: &wasm_coredump_types::Value,
 ) -> Result<(), BoxError> {
     match value {
-        ast::coredump::Value::Missing => {
+        wasm_coredump_types::Value::Missing => {
             write!(out, "(optimized out)")?;
         }
-        ast::coredump::Value::I32(v) => {
+        wasm_coredump_types::Value::I32(v) => {
             write!(out, "{}", v)?;
         }
-        ast::coredump::Value::I64(v) => {
+        wasm_coredump_types::Value::I64(v) => {
             write!(out, "{}", v)?;
         }
-        ast::coredump::Value::F32(v) => {
+        wasm_coredump_types::Value::F32(v) => {
             write!(out, "{}", v)?;
         }
-        ast::coredump::Value::F64(v) => {
+        wasm_coredump_types::Value::F64(v) => {
             write!(out, "{}", v)?;
         }
     }
@@ -107,14 +106,14 @@ fn dump_value<W: Write>(
 fn dump_value_type<W: Write>(
     out: &mut W,
     _depth: usize,
-    value: &ast::coredump::Value,
+    value: &wasm_coredump_types::Value,
 ) -> Result<(), BoxError> {
     let v = match value {
-        ast::coredump::Value::Missing => "",
-        ast::coredump::Value::I32(_) => "i32",
-        ast::coredump::Value::I64(_) => "i64",
-        ast::coredump::Value::F32(_) => "f32",
-        ast::coredump::Value::F64(_) => "f64",
+        wasm_coredump_types::Value::Missing => "",
+        wasm_coredump_types::Value::I32(_) => "i32",
+        wasm_coredump_types::Value::I64(_) => "i64",
+        wasm_coredump_types::Value::F32(_) => "f32",
+        wasm_coredump_types::Value::F64(_) => "f64",
     };
     write!(out, "{}", v)?;
 
@@ -133,13 +132,13 @@ fn dump_data<W: Write>(out: &mut W, depth: usize, data: &[u8]) -> Result<(), Box
 fn dump_memory<W: Write>(
     out: &mut W,
     depth: usize,
-    memories: &Vec<ast::Memory>,
+    memories: &Vec<(u32, Option<u32>)>,
 ) -> Result<(), BoxError> {
     let tab = TAB.repeat(depth);
 
     for memory in memories {
-        write!(out, "{}(memory {}", tab, memory.min.value)?;
-        if let Some(max) = memory.max {
+        write!(out, "{}(memory {}", tab, memory.0)?;
+        if let Some(max) = memory.1 {
             writeln!(out, " {})", max)?;
         } else {
             writeln!(out, ")")?;

@@ -1,4 +1,4 @@
-use crate::{ast, coredump};
+use crate::ast;
 use log::debug;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -123,7 +123,7 @@ impl WasmModule {
         }
     }
 
-    pub fn get_coredump(&self) -> Result<coredump::Coredump, BoxError> {
+    pub fn get_coredump(&self) -> Result<wasm_coredump_types::Coredump, BoxError> {
         let mut data = vec![];
         let mut stacks = vec![];
         let mut process_info = None;
@@ -141,7 +141,9 @@ impl WasmModule {
                 }
 
                 ast::Section::Memory((_section_size, content)) => {
-                    memory = content.clone();
+                    for m in content {
+                        memory.push((m.min.value, m.max))
+                    }
                 }
 
                 ast::Section::Custom((_size, section)) => match &*section.lock().unwrap() {
@@ -159,7 +161,7 @@ impl WasmModule {
 
         let process_info = process_info.ok_or("Wasm module is not a coredump")?;
 
-        Ok(coredump::Coredump {
+        Ok(wasm_coredump_types::Coredump {
             data,
             stacks,
             process_info,

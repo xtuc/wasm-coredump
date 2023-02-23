@@ -20,6 +20,7 @@ core-wasm-ast = { path = "../../lib/ast", version = "0.1.9" }
 wasm-parser = { path = "../../lib/parser", version = "0.1.9" }
 wasm-printer = { path = "../../lib/printer", version = "0.1.9" }
 wasm-coredump-rewriter = { path = "../../bin/rewriter", version = "0.1.9" }
+wasm-coredump-types = { path = "../../lib/coredump-types", version = "0.1.9" }
 clap = { version = "4.1.4", features = ["derive"] }
 wasmtime = "5.0.0"
 wasmtime-wasi = "5.0.0"

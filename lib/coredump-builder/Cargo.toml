@@ -8,5 +8,6 @@ keywords = ["wasm", "rust", "coredump"]
 description = "Wasm coredump builder API for Rust"
 
 [dependencies]
-core-wasm-ast = { path = "../ast", version = "0.1.9" }
-wasm-printer = { path = "../printer", version = "0.1.9" }
+wasm-coredump-types = { path = "../coredump-types", version = "0.1.9" }
+wasm-coredump-encoder = { path = "../coredump-encoder", version = "0.1.9" }
+wasm-encoder = "0.23.0"

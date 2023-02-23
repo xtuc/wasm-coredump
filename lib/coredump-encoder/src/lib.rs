@@ -1,26 +1,36 @@
-use super::{write_u32, write_utf8};
-use core_wasm_ast as ast;
+use std::io::Write;
+use wasm_coredump_types as types;
 
 type BoxError = Box<dyn std::error::Error + Sync + Send>;
 
-pub(crate) fn write_section_custom_coredump(
-    buffer: &mut Vec<u8>,
-    process_info: &ast::coredump::ProcessInfo,
-) -> Result<(), BoxError> {
-    write_utf8(buffer, "core");
+fn write_u32(buffer: &mut Vec<u8>, n: u32) {
+    buffer.extend_from_slice(&n.to_le_bytes());
+}
 
+pub(crate) fn write_unsigned_leb128(buffer: &mut Vec<u8>, n: u64) {
+    leb128::write::unsigned(buffer, n).expect("could not write LEB128");
+}
+
+fn write_utf8(buffer: &mut Vec<u8>, v: &str) {
+    let bytes = v.as_bytes().to_vec();
+    write_unsigned_leb128(buffer, bytes.len() as u64);
+    buffer.write_all(&bytes).unwrap();
+}
+
+pub fn encode_coredump_process(
+    buffer: &mut Vec<u8>,
+    process_info: &types::ProcessInfo,
+) -> Result<(), BoxError> {
     buffer.push(0x0);
     write_utf8(buffer, &process_info.executable_name);
 
     Ok(())
 }
 
-pub(crate) fn write_section_custom_coredump_stack(
+pub fn encode_coredump_stack(
     buffer: &mut Vec<u8>,
-    stack: &ast::coredump::CoreStack,
+    stack: &types::CoreStack,
 ) -> Result<(), BoxError> {
-    write_utf8(buffer, "corestack");
-
     // thread-info
     buffer.push(0x0);
     write_utf8(buffer, &stack.thread_info.thread_name);

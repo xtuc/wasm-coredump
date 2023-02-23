@@ -1,4 +1,3 @@
-use crate::coredump;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -414,8 +413,8 @@ impl Value<Section> {
 pub enum CustomSection {
     Unknown(String, Vec<u8>),
     Name(DebugNames),
-    CoredumpCore(coredump::ProcessInfo),
-    CoredumpCoreStack(coredump::CoreStack),
+    CoredumpCore(wasm_coredump_types::ProcessInfo),
+    CoredumpCoreStack(wasm_coredump_types::CoreStack),
 }
 
 #[derive(Debug)]

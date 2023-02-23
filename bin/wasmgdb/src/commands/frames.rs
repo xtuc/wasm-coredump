@@ -4,7 +4,7 @@ use colored::Colorize;
 
 pub(crate) fn backtrace<'a>(
     ctx: &Context<'a>,
-    thread: &core_wasm_ast::coredump::CoreStack,
+    thread: &wasm_coredump_types::CoreStack,
 ) -> Result<(), BoxError> {
     let mut i = thread.frames.len();
     for frame in &thread.frames {
@@ -27,7 +27,7 @@ pub(crate) fn backtrace<'a>(
 
 pub(crate) fn print_frame<'a>(
     ctx: &Context<'a>,
-    frame: &core_wasm_ast::coredump::StackFrame,
+    frame: &wasm_coredump_types::StackFrame,
 ) -> Result<(), BoxError> {
     let coredump = ctx.coredump.as_ref().ok_or("no coredump present")?;
     let binary_name = ctx
@@ -89,7 +89,7 @@ pub(crate) fn print_frame<'a>(
 
 pub(crate) fn select_frame<'a>(
     ctx: &mut Context<'a>,
-    frame: &core_wasm_ast::coredump::StackFrame,
+    frame: &wasm_coredump_types::StackFrame,
 ) -> Result<(), BoxError> {
     // Clear previous selected scope
     ctx.variables.clear();

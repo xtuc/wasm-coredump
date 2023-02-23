@@ -1,7 +1,3 @@
-use core_wasm_ast as ast;
-use std::sync::Arc;
-use std::sync::Mutex;
-
 type BoxError = Box<dyn std::error::Error + Sync + Send>;
 
 #[derive(Default)]
@@ -19,8 +15,8 @@ impl FrameBuilder {
         self
     }
 
-    pub fn build(self) -> ast::coredump::StackFrame {
-        ast::coredump::StackFrame {
+    pub fn build(self) -> wasm_coredump_types::StackFrame {
+        wasm_coredump_types::StackFrame {
             code_offset: self.funcidx.unwrap(),
             locals: vec![],
             stack: vec![],
@@ -31,7 +27,7 @@ impl FrameBuilder {
 #[derive(Default)]
 pub struct CoredumpBuilder {
     executable_name: String,
-    threads: Vec<ast::coredump::CoreStack>,
+    threads: Vec<wasm_coredump_types::CoreStack>,
 }
 
 impl CoredumpBuilder {
@@ -44,50 +40,46 @@ impl CoredumpBuilder {
         self
     }
 
-    pub fn add_thread(&mut self, thread: ast::coredump::CoreStack) {
+    pub fn add_thread(&mut self, thread: wasm_coredump_types::CoreStack) {
         self.threads.push(thread);
     }
 
     pub fn serialize(self) -> Result<Vec<u8>, BoxError> {
-        let module = ast::Module {
-            sections: Arc::new(Mutex::new(vec![])),
-        };
-        let module = ast::traverse::WasmModule::new(Arc::new(module));
+        let mut module = wasm_encoder::Module::new();
 
-        // Core
+        // core
         {
-            // size will be calcuated during printing
-            let size = ast::Value::new(0);
-            let section = ast::Section::Custom((
-                size,
-                Arc::new(Mutex::new(ast::CustomSection::CoredumpCore(
-                    ast::coredump::ProcessInfo {
-                        executable_name: self.executable_name,
-                    },
-                ))),
-            ));
-            module.add_section(section);
+            let mut data = vec![];
+            let process_info = wasm_coredump_types::ProcessInfo {
+                executable_name: self.executable_name,
+            };
+            wasm_coredump_encoder::encode_coredump_process(&mut data, &process_info)?;
+
+            module.section(&wasm_encoder::CustomSection {
+                name: "core",
+                data: &data,
+            });
         }
 
         // corestack
         for thread in self.threads {
-            // size will be calcuated during printing
-            let size = ast::Value::new(0);
-            let section = ast::Section::Custom((
-                size,
-                Arc::new(Mutex::new(ast::CustomSection::CoredumpCoreStack(thread))),
-            ));
-            module.add_section(section);
+            let mut data = vec![];
+            wasm_coredump_encoder::encode_coredump_stack(&mut data, &thread)?;
+
+            module.section(&wasm_encoder::CustomSection {
+                name: "corestack",
+                data: &data,
+            });
         }
 
-        wasm_printer::wasm::print(&module.inner)
+        Ok(module.finish())
     }
 }
 
 #[derive(Default)]
 pub struct ThreadBuilder {
     thread_name: String,
-    frames: Vec<ast::coredump::StackFrame>,
+    frames: Vec<wasm_coredump_types::StackFrame>,
 }
 
 impl ThreadBuilder {
@@ -100,14 +92,14 @@ impl ThreadBuilder {
         self
     }
 
-    pub fn add_frame(&mut self, frame: ast::coredump::StackFrame) {
+    pub fn add_frame(&mut self, frame: wasm_coredump_types::StackFrame) {
         self.frames.push(frame);
     }
 
-    pub fn build(self) -> ast::coredump::CoreStack {
-        ast::coredump::CoreStack {
+    pub fn build(self) -> wasm_coredump_types::CoreStack {
+        wasm_coredump_types::CoreStack {
             frames: self.frames,
-            thread_info: ast::coredump::ThreadInfo {
+            thread_info: wasm_coredump_types::ThreadInfo {
                 thread_name: self.thread_name,
             },
         }

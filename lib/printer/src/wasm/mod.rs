@@ -3,8 +3,6 @@ use core_wasm_ast as ast;
 use log::warn;
 use std::io::Write;
 
-mod coredump;
-
 type BoxError = Box<dyn std::error::Error + Sync + Send>;
 
 pub fn print(module: &ast::Module) -> Result<Vec<u8>, BoxError> {
@@ -284,11 +282,13 @@ fn write_section_custom(
         ast::CustomSection::Name(content) => write_section_custom_name(buffer, &content)?,
 
         ast::CustomSection::CoredumpCore(content) => {
-            coredump::write_section_custom_coredump(buffer, content)?;
+            write_utf8(buffer, "core");
+            wasm_coredump_encoder::encode_coredump_process(buffer, content)?;
         }
 
         ast::CustomSection::CoredumpCoreStack(content) => {
-            coredump::write_section_custom_coredump_stack(buffer, content)?;
+            write_utf8(buffer, "corestack");
+            wasm_coredump_encoder::encode_coredump_stack(buffer, content)?;
         }
     }
 
@@ -765,10 +765,6 @@ fn write_float_f64(buffer: &mut Vec<u8>, n: f64) {
     let mut b = [0; 8];
     LittleEndian::write_f64(&mut b, n);
     buffer.extend(b.iter())
-}
-
-pub(crate) fn write_u32(buffer: &mut Vec<u8>, n: u32) {
-    buffer.extend_from_slice(&n.to_le_bytes());
 }
 
 fn write_float_f32(buffer: &mut Vec<u8>, n: f32) {

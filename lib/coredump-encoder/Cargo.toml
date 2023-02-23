@@ -1,0 +1,12 @@
+[package]
+name = "wasm-coredump-encoder"
+version = "0.1.9"
+edition = "2021"
+authors = ["Sven Sauleau <sven@sauleau.com>"]
+license = "MIT"
+keywords = ["wasm", "rust", "coredump", "WebAssembly"]
+description = "Wasm coredump encoding"
+
+[dependencies]
+leb128 = "0.2.5"
+wasm-coredump-types = { path = "../coredump-types", version = "0.1.9" }

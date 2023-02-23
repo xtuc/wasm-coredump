@@ -4,5 +4,7 @@ members = [
   "lib/parser",
   "lib/printer",
   "lib/coredump-builder",
+  "lib/coredump-encoder",
+  "lib/coredump-types",
   "bin/*",
 ]

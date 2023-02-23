@@ -1,17 +1,16 @@
 use crate::{decode_name, IResult, InputContext};
-use core_wasm_ast as ast;
 use log::debug;
 
 pub(crate) fn decode_process_info<'a>(
     ctx: InputContext<'a>,
-) -> IResult<InputContext<'a>, ast::coredump::ProcessInfo> {
+) -> IResult<InputContext<'a>, wasm_coredump_types::ProcessInfo> {
     let (ctx, t) = ctx.read_u8()?;
     if t != 0 {
         unimplemented!("unsupported process-info type: {}", t);
     }
 
     let (ctx, name) = decode_name(ctx)?;
-    let value = ast::coredump::ProcessInfo {
+    let value = wasm_coredump_types::ProcessInfo {
         executable_name: name,
     };
     Ok((ctx, value))
@@ -19,20 +18,20 @@ pub(crate) fn decode_process_info<'a>(
 
 pub(crate) fn decode_thread_info<'a>(
     ctx: InputContext<'a>,
-) -> IResult<InputContext<'a>, ast::coredump::ThreadInfo> {
+) -> IResult<InputContext<'a>, wasm_coredump_types::ThreadInfo> {
     let (ctx, t) = ctx.read_u8()?;
     if t != 0 {
         unimplemented!("unsupported thread-info type: {}", t);
     }
 
     let (ctx, name) = decode_name(ctx)?;
-    let value = ast::coredump::ThreadInfo { thread_name: name };
+    let value = wasm_coredump_types::ThreadInfo { thread_name: name };
     Ok((ctx, value))
 }
 
 pub(crate) fn decode_core_stack<'a>(
     ctx: InputContext<'a>,
-) -> IResult<InputContext<'a>, ast::coredump::CoreStack> {
+) -> IResult<InputContext<'a>, wasm_coredump_types::CoreStack> {
     let (ctx, thread_info) = decode_thread_info(ctx)?;
     debug!("thread_info {:?}", thread_info);
 
@@ -50,7 +49,7 @@ pub(crate) fn decode_core_stack<'a>(
         frames.push(res.1)
     }
 
-    let value = ast::coredump::CoreStack {
+    let value = wasm_coredump_types::CoreStack {
         thread_info,
         frames,
     };
@@ -59,7 +58,7 @@ pub(crate) fn decode_core_stack<'a>(
 
 pub(crate) fn decode_stack_frame<'a>(
     ctx: InputContext<'a>,
-) -> IResult<InputContext<'a>, ast::coredump::StackFrame> {
+) -> IResult<InputContext<'a>, wasm_coredump_types::StackFrame> {
     let (ctx, code_offset) = ctx.read_u32()?;
     let (ctx, count_local) = ctx.read_u32()?;
 
@@ -71,26 +70,26 @@ pub(crate) fn decode_stack_frame<'a>(
         let t = res.1;
 
         let res = match t {
-            0x01 => (ctx, ast::coredump::Value::Missing),
+            0x01 => (ctx, wasm_coredump_types::Value::Missing),
 
             0x7F => {
                 let (ctx, v) = ctx.read_i32()?;
-                (ctx, ast::coredump::Value::I32(v))
+                (ctx, wasm_coredump_types::Value::I32(v))
             }
 
             0x7E => {
                 let (ctx, v) = ctx.read_i64()?;
-                (ctx, ast::coredump::Value::I64(v))
+                (ctx, wasm_coredump_types::Value::I64(v))
             }
 
             0x7D => {
                 let (ctx, v) = ctx.read_f32()?;
-                (ctx, ast::coredump::Value::F32(v))
+                (ctx, wasm_coredump_types::Value::F32(v))
             }
 
             0x7C => {
                 let (ctx, v) = ctx.read_f64()?;
-                (ctx, ast::coredump::Value::F64(v))
+                (ctx, wasm_coredump_types::Value::F64(v))
             }
 
             b => {
@@ -102,7 +101,7 @@ pub(crate) fn decode_stack_frame<'a>(
         locals.push(res.1);
     }
 
-    let frame = ast::coredump::StackFrame {
+    let frame = wasm_coredump_types::StackFrame {
         code_offset,
         locals,
         stack: vec![],

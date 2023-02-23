@@ -12,3 +12,4 @@ description = "Wasm AST with traversal and manipulations"
 threadpool = "1.8.1"
 num_cpus = "1.14.0"
 log = "0.4.17"
+wasm-coredump-types = { path = "../coredump-types", version = "0.1.9" }

@@ -15,13 +15,13 @@ use wasmgdb_ddbug_parser as ddbug_parser;
 pub(crate) type BoxError = Box<dyn std::error::Error>;
 
 pub(crate) struct Context<'a> {
-    pub(crate) selected_frame: Option<core_wasm_ast::coredump::StackFrame>,
+    pub(crate) selected_frame: Option<wasm_coredump_types::StackFrame>,
     pub(crate) selected_thread: Option<usize>,
 
     /// Variables present in the selected scope
     pub(crate) variables: HashMap<String, ddbug_parser::Parameter<'a>>,
 
-    pub(crate) coredump: Option<core_wasm_ast::coredump::Coredump>,
+    pub(crate) coredump: Option<wasm_coredump_types::Coredump>,
 
     /// DWARF informations
     pub(crate) ddbug: ddbug_parser::FileHash<'a>,
@@ -33,14 +33,14 @@ pub(crate) struct Context<'a> {
 }
 
 impl<'a> Context<'a> {
-    pub(crate) fn coredump(&mut self) -> Result<core_wasm_ast::coredump::Coredump, BoxError> {
+    pub(crate) fn coredump(&mut self) -> Result<wasm_coredump_types::Coredump, BoxError> {
         self.coredump
             .as_ref()
             .map(|c| c.clone())
             .ok_or("No coredump present".into())
     }
 
-    pub(crate) fn thread(&mut self) -> Result<core_wasm_ast::coredump::CoreStack, BoxError> {
+    pub(crate) fn thread(&mut self) -> Result<wasm_coredump_types::CoreStack, BoxError> {
         let coredump = self.coredump()?;
 
         self.selected_thread
@@ -172,7 +172,7 @@ fn get_enum_name<'i>(
 }
 
 pub(crate) fn repl(
-    coredump: Option<core_wasm_ast::coredump::Coredump>,
+    coredump: Option<wasm_coredump_types::Coredump>,
     source: &core_wasm_ast::traverse::WasmModule,
     ddbug: ddbug_parser::FileHash<'_>,
 ) -> Result<(), BoxError> {
