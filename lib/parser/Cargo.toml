@@ -1,6 +1,6 @@
 [package]
 name = "wasm-parser"
-version = "0.1.8"
+version = "0.1.9"
 edition = "2021"
 authors = ["Sven Sauleau <sven@sauleau.com>"]
 license = "MIT"
@@ -13,4 +13,4 @@ leb128 = "0.2.5"
 nom = "7"
 env_logger = "0.9.1"
 log = "0.4.17"
-core-wasm-ast = { path = "../ast", version = "0.1.8" }
+core-wasm-ast = { path = "../ast", version = "0.1.9" }
