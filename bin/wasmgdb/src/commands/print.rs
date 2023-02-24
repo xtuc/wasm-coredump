@@ -120,7 +120,7 @@ pub(crate) fn print<'a>(
         .ok_or("no frame has been selected")?;
     let binary_name = ctx
         .source
-        .get_func_name(selected_frame.code_offset)
+        .get_func_name(selected_frame.funcidx)
         .unwrap_or_else(|| "unknown".to_string());
     let func = *ctx
         .ddbug

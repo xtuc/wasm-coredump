@@ -25,7 +25,7 @@ pub(crate) fn info<'a>(
             let frame = ctx.selected_frame.as_ref().ok_or("no selected frame")?;
             let binary_name = ctx
                 .source
-                .get_func_name(frame.code_offset)
+                .get_func_name(frame.funcidx)
                 .unwrap_or_else(|| "unknown".to_string());
             let func = ctx
                 .ddbug

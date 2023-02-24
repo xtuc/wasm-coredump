@@ -40,11 +40,11 @@ pub fn encode_coredump_stack(
     write_u32(buffer, 0); // size unused
 
     for frame in &stack.frames {
-        write_u32(buffer, frame.code_offset);
+        write_u32(buffer, frame.funcidx);
+        write_u32(buffer, frame.codeoffset);
         write_u32(buffer, 0); // locals
 
         // write_u32(buffer, 0); // stack
-        // write_u32(buffer, 0); // reserved
     }
 
     Ok(())

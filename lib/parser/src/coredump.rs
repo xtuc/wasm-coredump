@@ -59,7 +59,8 @@ pub(crate) fn decode_core_stack<'a>(
 pub(crate) fn decode_stack_frame<'a>(
     ctx: InputContext<'a>,
 ) -> IResult<InputContext<'a>, wasm_coredump_types::StackFrame> {
-    let (ctx, code_offset) = ctx.read_u32()?;
+    let (ctx, funcidx) = ctx.read_u32()?;
+    let (ctx, codeoffset) = ctx.read_u32()?;
     let (ctx, count_local) = ctx.read_u32()?;
 
     let mut locals = Vec::with_capacity(count_local as usize);
@@ -102,7 +103,8 @@ pub(crate) fn decode_stack_frame<'a>(
     }
 
     let frame = wasm_coredump_types::StackFrame {
-        code_offset,
+        funcidx,
+        codeoffset,
         locals,
         stack: vec![],
     };

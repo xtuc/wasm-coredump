@@ -2,7 +2,8 @@ type BoxError = Box<dyn std::error::Error + Sync + Send>;
 
 #[derive(Default)]
 pub struct FrameBuilder {
-    funcidx: Option<u32>,
+    funcidx: u32,
+    codeoffset: u32,
 }
 
 impl FrameBuilder {
@@ -11,13 +12,19 @@ impl FrameBuilder {
     }
 
     pub fn funcidx(mut self, funcidx: u32) -> Self {
-        self.funcidx = Some(funcidx);
+        self.funcidx = funcidx;
+        self
+    }
+
+    pub fn codeoffset(mut self, codeoffset: u32) -> Self {
+        self.codeoffset = codeoffset;
         self
     }
 
     pub fn build(self) -> wasm_coredump_types::StackFrame {
         wasm_coredump_types::StackFrame {
-            code_offset: self.funcidx.unwrap(),
+            funcidx: self.funcidx,
+            codeoffset: self.codeoffset,
             locals: vec![],
             stack: vec![],
         }

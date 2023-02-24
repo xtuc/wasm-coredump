@@ -41,7 +41,7 @@ function set_frames_ptr(ptr: u32): void {
   store<u32>(4, ptr)
 }
 
-export function start_frame(code_offset: u32, local_count: u32): void {
+export function start_frame(funcidx: u32, local_count: u32): void {
   // update frame counter
   const frame_count = load<u32>(0)
   store<u32>(0, frame_count + 1)
@@ -49,7 +49,9 @@ export function start_frame(code_offset: u32, local_count: u32): void {
   let ptr = get_frames_ptr();
 
   // Create frame struct
-  store<u32>(ptr, code_offset)
+  store<u32>(ptr, funcidx)
+  ptr += 4
+  store<u32>(ptr, 0) // codeoffset
   ptr += 4
   store<u32>(ptr, local_count)
   ptr += 4

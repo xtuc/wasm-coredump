@@ -7,7 +7,7 @@
 //!
 //! Where a `frame` is:
 //!
-//! | code offset (u32) | count local (u32) | local* (u8 u32) |
+//! | funcidx (u32) | codeoffset (u32) | count local (u32) | local* (u8 u32) |
 
 use core_wasm_ast as ast;
 use core_wasm_ast::traverse::{self, Visitor, VisitorContext, WasmModule};
