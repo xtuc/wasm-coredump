@@ -88,6 +88,10 @@ List all defined functions.
 
 List globals.
 
+#### `info process`
+
+Information about the process.
+
 ### Expr
 
 - Member access: `<object>-><member>`

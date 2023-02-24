@@ -155,6 +155,16 @@ pub(crate) fn info<'a>(
             Ok(())
         }
 
+        "process" => {
+            if let Some(coredump) = &ctx.coredump {
+                println!(
+                    "executable-name = {}",
+                    coredump.process_info.executable_name
+                );
+            }
+            Ok(())
+        }
+
         _ => Err(format!("info {} not implemented", what).into()),
     }
 }
