@@ -4,7 +4,7 @@ version = "0.1.11"
 edition = "2021"
 authors = ["Sven Sauleau <sven@sauleau.com>"]
 license = "MIT"
-keywords = ["wasm", "rust", "coredump"]
+keywords = ["wasm", "rust", "coredump", "api"]
 description = "Wasm coredump builder API for Rust"
 
 [dependencies]
