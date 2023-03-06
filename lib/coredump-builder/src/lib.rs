@@ -35,6 +35,8 @@ impl FrameBuilder {
 pub struct CoredumpBuilder {
     executable_name: String,
     threads: Vec<wasm_coredump_types::CoreStack>,
+    memory: (u32, Option<u32>),
+    data: Vec<u8>,
 }
 
 impl CoredumpBuilder {
@@ -44,6 +46,16 @@ impl CoredumpBuilder {
 
     pub fn executable_name(mut self, name: &str) -> Self {
         self.executable_name = name.to_owned();
+        self
+    }
+
+    pub fn data(mut self, bytes: &[u8]) -> Self {
+        self.data = bytes.to_owned();
+        self
+    }
+
+    pub fn memory(mut self, min: u32, max: Option<u32>) -> Self {
+        self.memory = (min, max);
         self
     }
 
@@ -77,6 +89,28 @@ impl CoredumpBuilder {
                 name: "corestack",
                 data: &data,
             });
+        }
+
+        // memory
+        {
+            let mut memories = wasm_encoder::MemorySection::new();
+            memories.memory(wasm_encoder::MemoryType {
+                minimum: self.memory.0 as u64,
+                maximum: self.memory.1.map(|v| v as u64),
+                memory64: false,
+                shared: false,
+            });
+
+            module.section(&memories);
+        }
+
+        // data
+        {
+            let mut data = wasm_encoder::DataSection::new();
+            let offset = wasm_encoder::ConstExpr::i32_const(0);
+            data.active(0, &offset, self.data);
+
+            module.section(&data);
         }
 
         Ok(module.finish())
