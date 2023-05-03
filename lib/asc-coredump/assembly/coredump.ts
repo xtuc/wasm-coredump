@@ -1,5 +1,9 @@
 import * as wasm from 'asc-wasm/assembly'
 
+// Pointer or cursor to the latest frame
+// The first frame starts after the "number of frames (u32)".
+var frames_ptr: u32 = sizeof<u32>() * 1;
+
 @inline
 function write_u8(ptr: u32, v: u8): u32 {
   store<u8>(ptr, v)
@@ -23,54 +27,39 @@ function write_thread_info(ptr: u32): u32 {
   return wrote
 }
 
-@inline
-function get_frames_ptr(): u32 {
-  const next_frame = load<u32>(4)
-  let ptr: u32 = next_frame
-  if (ptr === 0) {
-    // It's the first frame we add, it starts after the "number of frames (u32)"
-    // and "next frame offset (u32)".
-    ptr = sizeof<u32>() * 2
-  }
-
-  return ptr
-}
-
-@inline
-function set_frames_ptr(ptr: u32): void {
-  store<u32>(4, ptr)
-}
-
 export function start_frame(funcidx: u32, local_count: u32): void {
   // update frame counter
   const frame_count = load<u32>(0)
   store<u32>(0, frame_count + 1)
 
-  let ptr = get_frames_ptr();
+  let ptr = frames_ptr;
 
   // Create frame struct
+  ptr += write_u8(ptr, 0) // frame version 0
   store<u32>(ptr, funcidx)
   ptr += 4
   store<u32>(ptr, 0) // codeoffset
   ptr += 4
   store<u32>(ptr, local_count)
   ptr += 4
+  store<u32>(ptr, 0) // stack count
+  ptr += 4
 
-  set_frames_ptr(ptr)
+  frames_ptr = ptr
 }
 
 export function add_missing_local(): void {
-  let ptr = get_frames_ptr();
+  let ptr = frames_ptr;
 
   // Type
   store<u8>(ptr, 0x01)
   ptr += 1;
 
-  set_frames_ptr(ptr)
+  frames_ptr = ptr
 }
 
 export function add_i32_local(v: i32): void {
-  let ptr = get_frames_ptr();
+  let ptr = frames_ptr;
 
   // Type
   store<u8>(ptr, 0x7F)
@@ -80,11 +69,11 @@ export function add_i32_local(v: i32): void {
   store<i32>(ptr, v)
   ptr += sizeof<i32>();
 
-  set_frames_ptr(ptr)
+  frames_ptr = ptr
 }
 
 export function add_f32_local(v: f32): void {
-  let ptr = get_frames_ptr();
+  let ptr = frames_ptr;
 
   // Type
   store<u8>(ptr, 0x7D)
@@ -94,11 +83,11 @@ export function add_f32_local(v: f32): void {
   store<f32>(ptr, v)
   ptr += sizeof<f32>();
 
-  set_frames_ptr(ptr)
+  frames_ptr = ptr
 }
 
 export function add_f64_local(v: f64): void {
-  let ptr = get_frames_ptr();
+  let ptr = frames_ptr;
 
   // Type
   store<u8>(ptr, 0x7C)
@@ -108,11 +97,11 @@ export function add_f64_local(v: f64): void {
   store<f64>(ptr, v)
   ptr += sizeof<f64>();
 
-  set_frames_ptr(ptr)
+  frames_ptr = ptr
 }
 
 export function add_i64_local(v: i64): void {
-  let ptr = get_frames_ptr();
+  let ptr = frames_ptr;
 
   // Type
   store<u8>(ptr, 0x7E)
@@ -122,14 +111,16 @@ export function add_i64_local(v: i64): void {
   store<i64>(ptr, v)
   ptr += sizeof<i64>();
 
-  set_frames_ptr(ptr)
+  frames_ptr = ptr
 }
 
 export function write_coredump(): void {
   let ptr: u32 = 0;
 
+  // End of all the frames, aka their cumulative size.
+  let frames_size = frames_ptr
+
   // copy coredump struct in the corestack section
-  const frames_size = load<u32>(4);
   const corestack_section_size = frames_size
     + 1 // section name size
     + 9 // section name

@@ -4,7 +4,7 @@ target/debug/coredump-dump:
 target/debug/wasm-coredump-rewriter: lib/asc-coredump/build/runtime.wasm
 	cargo build
 
-lib/asc-coredump/build/runtime.wasm:
+lib/asc-coredump/build/runtime.wasm: lib/asc-coredump/assembly/coredump.ts
 	make -C ./lib/asc-coredump build/runtime.wasm
 
 .PHONY: test-runtime

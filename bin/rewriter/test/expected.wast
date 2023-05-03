@@ -42,8 +42,7 @@
     global.set 0)
   (func $coredump/write_coredump (type 2)
     (local i32 i32 i32 i32 i32 i32 i32 i32 i32)
-    i32.const 4
-    i32.load
+    global.get 0
     local.tee 3
     i32.const 16
     i32.add
@@ -996,15 +995,14 @@
     i32.const 1
     i32.add
     i32.store
-    i32.const 4
-    i32.load
+    global.get 0
     local.tee 2
-    i32.eqz
-    if  ;; label = @1
-      i32.const 8
-      local.set 2
-    end
+    i32.const 0
+    i32.store8
     local.get 2
+    i32.const 1
+    i32.add
+    local.tee 2
     local.get 0
     i32.store
     local.get 2
@@ -1019,22 +1017,20 @@
     local.tee 0
     local.get 1
     i32.store
-    i32.const 4
     local.get 0
     i32.const 4
     i32.add
-    i32.store)
+    local.tee 0
+    i32.const 0
+    i32.store
+    local.get 0
+    i32.const 4
+    i32.add
+    global.set 0)
   (func $coredump/add_i32_local (type 4) (param i32)
     (local i32)
-    i32.const 4
-    i32.load
+    global.get 0
     local.tee 1
-    i32.eqz
-    if  ;; label = @1
-      i32.const 8
-      local.set 1
-    end
-    local.get 1
     i32.const 127
     i32.store8
     local.get 1
@@ -1043,22 +1039,14 @@
     local.tee 1
     local.get 0
     i32.store
-    i32.const 4
     local.get 1
     i32.const 4
     i32.add
-    i32.store)
+    global.set 0)
   (func $coredump/add_f32_local (type 5) (param f32)
     (local i32)
-    i32.const 4
-    i32.load
+    global.get 0
     local.tee 1
-    i32.eqz
-    if  ;; label = @1
-      i32.const 8
-      local.set 1
-    end
-    local.get 1
     i32.const 125
     i32.store8
     local.get 1
@@ -1067,22 +1055,14 @@
     local.tee 1
     local.get 0
     f32.store
-    i32.const 4
     local.get 1
     i32.const 4
     i32.add
-    i32.store)
+    global.set 0)
   (func $coredump/add_f64_local (type 6) (param f64)
     (local i32)
-    i32.const 4
-    i32.load
+    global.get 0
     local.tee 1
-    i32.eqz
-    if  ;; label = @1
-      i32.const 8
-      local.set 1
-    end
-    local.get 1
     i32.const 124
     i32.store8
     local.get 1
@@ -1091,22 +1071,14 @@
     local.tee 1
     local.get 0
     f64.store
-    i32.const 4
     local.get 1
     i32.const 8
     i32.add
-    i32.store)
+    global.set 0)
   (func $coredump/add_i64_local (type 7) (param i64)
     (local i32)
-    i32.const 4
-    i32.load
+    global.get 0
     local.tee 1
-    i32.eqz
-    if  ;; label = @1
-      i32.const 8
-      local.set 1
-    end
-    local.get 1
     i32.const 126
     i32.store8
     local.get 1
@@ -1115,11 +1087,10 @@
     local.tee 1
     local.get 0
     i64.store
-    i32.const 4
     local.get 1
     i32.const 8
     i32.add
-    i32.store)
+    global.set 0)
   (memory (;0;) 10)
   (global (;0;) (mut i32) (i32.const 0))
   (export "addTwo" (func $entry))
