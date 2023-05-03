@@ -18,6 +18,7 @@ test-rewriter: target/debug/wasm-coredump-rewriter
 
 .PHONY: test
 test: test-runtime test-rewriter
+	cargo test
 
 .PHONY: publish
 publish:

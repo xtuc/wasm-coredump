@@ -19,7 +19,7 @@
 //!     coredump_builder.add_thread(thread_builder.build());
 //! }
 //!
-//! let coredump = coredump_builder.serialize()?;
+//! let coredump = coredump_builder.serialize().unwrap();
 //! ```
 //!
 //! [Wasm Coredump]: https://github.com/WebAssembly/tool-conventions/blob/main/Coredump.md
@@ -99,6 +99,18 @@ impl CoredumpBuilder {
     /// Add a thread to the coredump
     pub fn add_thread(&mut self, thread: wasm_coredump_types::CoreStack) {
         self.threads.push(thread);
+    }
+
+    /// Build the coredump
+    pub fn build(self) -> wasm_coredump_types::Coredump {
+        wasm_coredump_types::Coredump {
+            process_info: wasm_coredump_types::ProcessInfo {
+                executable_name: self.executable_name,
+            },
+            stacks: self.threads,
+            memory: vec![self.memory],
+            data: self.data,
+        }
     }
 
     /// Serialize the coredump to bytes, using the Wasm binary format.

@@ -1505,7 +1505,9 @@ name = "wasm-coredump-encoder"
 version = "0.1.12"
 dependencies = [
  "leb128",
+ "wasm-coredump-builder",
  "wasm-coredump-types",
+ "wasm-printer",
 ]
 
 [[package]]
@@ -1550,7 +1552,10 @@ dependencies = [
  "leb128",
  "log",
  "nom",
+ "wasm-coredump-builder",
+ "wasm-coredump-encoder",
  "wasm-coredump-types",
+ "wasm-printer",
 ]
 
 [[package]]

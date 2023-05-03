@@ -1,6 +1,9 @@
 use std::io::Write;
 use wasm_coredump_types as types;
 
+#[cfg(test)]
+mod test;
+
 type BoxError = Box<dyn std::error::Error + Sync + Send>;
 
 fn write_u32(buffer: &mut Vec<u8>, n: u32) {
@@ -32,19 +35,20 @@ pub fn encode_coredump_stack(
     stack: &types::CoreStack,
 ) -> Result<(), BoxError> {
     // thread-info
-    buffer.push(0x0);
-    write_utf8(buffer, &stack.thread_info.thread_name);
+    {
+        buffer.push(0x0); // version 0
+        write_utf8(buffer, &stack.thread_info.thread_name);
+    }
 
     // frames
     write_u32(buffer, stack.frames.len() as u32);
-    write_u32(buffer, 0); // size unused
 
     for frame in &stack.frames {
+        buffer.push(0x0); // version 0
         write_u32(buffer, frame.funcidx);
         write_u32(buffer, frame.codeoffset);
-        write_u32(buffer, 0); // locals
-
-        // write_u32(buffer, 0); // stack
+        write_u32(buffer, 0); // locals vec size
+        write_u32(buffer, 0); // stack vec size
     }
 
     Ok(())

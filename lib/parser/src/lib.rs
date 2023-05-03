@@ -6,6 +6,8 @@ use std::sync::Arc;
 use std::sync::Mutex;
 
 mod coredump;
+#[cfg(test)]
+mod test;
 
 type BoxError = Box<dyn std::error::Error>;
 

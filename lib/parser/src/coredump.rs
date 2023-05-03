@@ -38,9 +38,6 @@ pub(crate) fn decode_core_stack<'a>(
     let (ctx, nframes) = ctx.read_u32()?;
     debug!("nframe {}", nframes);
 
-    let (ctx, size) = ctx.read_u32()?;
-    debug!("size {}", size);
-
     let mut frames = vec![];
     let mut ctx = ctx;
     for _ in 0..nframes {
@@ -59,9 +56,15 @@ pub(crate) fn decode_core_stack<'a>(
 pub(crate) fn decode_stack_frame<'a>(
     ctx: InputContext<'a>,
 ) -> IResult<InputContext<'a>, wasm_coredump_types::StackFrame> {
+    let (ctx, v) = ctx.read_u8()?;
+    if v != 0 {
+        unimplemented!("unsupported frame type {}", v);
+    }
+
     let (ctx, funcidx) = ctx.read_u32()?;
     let (ctx, codeoffset) = ctx.read_u32()?;
     let (ctx, count_local) = ctx.read_u32()?;
+    let (ctx, _count_stack) = ctx.read_u32()?;
 
     let mut locals = Vec::with_capacity(count_local as usize);
     let mut ctx = ctx;

@@ -15,3 +15,8 @@ env_logger = "0.9.1"
 log = "0.4.17"
 core-wasm-ast = { path = "../ast", version = "0.1.12" }
 wasm-coredump-types = { path = "../coredump-types", version = "0.1.12" }
+
+[dev-dependencies]
+wasm-coredump-encoder = { path = "../coredump-encoder", version = "0.1.12" }
+wasm-coredump-builder = { path = "../coredump-builder", version = "0.1.12" }
+wasm-printer = { path = "../printer", version = "0.1.12" }
