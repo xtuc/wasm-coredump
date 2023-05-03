@@ -3,12 +3,11 @@
 //! Informations about the stack is recorded at offset 0 in memory with the
 //! following structure:
 //!
-//! | number of frames (u32) | next frame offset (u32) | frame* |
+//! | number of frames (u32) | frame* |
 //!
-//! Where a `frame` is:
-//!
-//! | funcidx (u32) | codeoffset (u32) | count local (u32) | local* (u8 u32) |
+//! Where a `frame` is the Coredump frame encoding.
 
+use crate::runtime::get_runtime;
 use core_wasm_ast as ast;
 use core_wasm_ast::traverse::{self, Visitor, VisitorContext, WasmModule};
 use log::debug;
@@ -22,7 +21,26 @@ pub fn rewrite(
     check_memory_operations: bool,
 ) -> Result<(), BoxError> {
     let module = WasmModule::new(Arc::clone(&module_ast));
-    let runtime = get_runtime()?;
+
+    // Pointer or cursor to the latest frame
+    let frames_ptr_global = {
+        let expr = ast::Value::new(vec![
+            // The first frame starts after the "number of frames (u32)".
+            ast::Value::new(ast::Instr::i32_const(4)),
+            ast::Value::new(ast::Instr::end),
+        ]);
+        let global = ast::Global {
+            global_type: ast::GlobalType {
+                valtype: ast::ValueType::NumType(ast::NumType::I32),
+                mutable: true,
+            },
+            expr,
+        };
+        module.add_global(&global).unwrap()
+    };
+    debug!("frames_ptr_global global at {}", frames_ptr_global);
+
+    let runtime = get_runtime(frames_ptr_global)?;
 
     debug!(
         "code section starts at {}",
@@ -148,15 +166,6 @@ pub fn rewrite(
     traverse::traverse(Arc::clone(&module_ast), Arc::new(visitor));
 
     Ok(())
-}
-
-fn get_runtime() -> Result<WasmModule, BoxError> {
-    let contents = include_bytes!("../runtime.wasm");
-    let module_ast = wasm_parser::parse(contents)
-        .map_err(|err| format!("failed to parse runtime Wasm module: {}", err))?;
-    let module = WasmModule::new(Arc::new(module_ast));
-
-    return Ok(module);
 }
 
 pub fn locals_flatten(locals: Vec<ast::CodeLocal>) -> Vec<ast::CodeLocal> {

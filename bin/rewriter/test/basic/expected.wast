@@ -11,7 +11,7 @@
     local.get 0
     local.get 1
     call $addTwo
-    global.get 0
+    global.get 1
     if  ;; label = @1
       i32.const 0
       i32.const 2
@@ -39,7 +39,7 @@
     return)
   (func $coredump/unreachable_shim (type 1)
     i32.const 1
-    global.set 0)
+    global.set 1)
   (func $coredump/write_coredump (type 2)
     (local i32 i32 i32 i32 i32 i32 i32 i32 i32)
     global.get 0
@@ -1092,6 +1092,7 @@
     i32.add
     global.set 0)
   (memory (;0;) 10)
-  (global (;0;) (mut i32) (i32.const 0))
+  (global (;0;) (mut i32) (i32.const 4))
+  (global (;1;) (mut i32) (i32.const 0))
   (export "addTwo" (func $entry))
   (export "memory" (memory 0)))

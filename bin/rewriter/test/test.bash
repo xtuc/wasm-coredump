@@ -11,3 +11,4 @@ test() {
 
 test basic
 test memory --check-memory-operations
+test with-globals

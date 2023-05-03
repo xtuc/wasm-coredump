@@ -8,6 +8,7 @@ use std::sync::Arc;
 use std::time::Instant;
 
 mod rewriter;
+mod runtime;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
