@@ -265,6 +265,39 @@ impl WasmModule {
         types.get(&typeidx).expect("type not found").clone()
     }
 
+    pub fn add_func_local(&self, target_funcidx: u32, local: ast::CodeLocal) -> bool {
+        let mut funcidx = 0;
+
+        for section in self.inner.sections.lock().unwrap().iter() {
+            match &section.value {
+                ast::Section::Import((_size, content)) => {
+                    let imports = content.lock().unwrap().clone();
+
+                    for import in &imports {
+                        match import.import_type {
+                            ast::ImportType::Func(_) => funcidx += 1,
+                            _ => {}
+                        }
+                    }
+                }
+
+                ast::Section::Code((_section_size, content)) => {
+                    for c in &mut content.lock().unwrap().value {
+                        if funcidx == target_funcidx {
+                            c.locals.push(local);
+                            return true;
+                        }
+
+                        funcidx += 1;
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        false
+    }
+
     pub fn get_type(&self, typeidx: u32) -> Option<ast::Type> {
         let types = self.types.lock().unwrap();
         types.get(&typeidx).cloned()

@@ -17,7 +17,10 @@ use std::sync::Mutex;
 
 type BoxError = Box<dyn std::error::Error>;
 
-pub fn rewrite(module_ast: Arc<ast::Module>) -> Result<(), BoxError> {
+pub fn rewrite(
+    module_ast: Arc<ast::Module>,
+    check_memory_operations: bool,
+) -> Result<(), BoxError> {
     let module = WasmModule::new(Arc::clone(&module_ast));
     let runtime = get_runtime()?;
 
@@ -139,6 +142,8 @@ pub fn rewrite(module_ast: Arc<ast::Module>) -> Result<(), BoxError> {
         add_i64_local,
         add_f32_local,
         add_f64_local,
+
+        check_memory_operations,
     };
     traverse::traverse(Arc::clone(&module_ast), Arc::new(visitor));
 
@@ -179,6 +184,8 @@ struct CoredumpTransform {
     add_i64_local: u32,
     add_f32_local: u32,
     add_f64_local: u32,
+
+    check_memory_operations: bool,
 }
 
 impl Visitor for CoredumpTransform {
@@ -187,12 +194,19 @@ impl Visitor for CoredumpTransform {
         let curr_func_type = ctx.module.get_func_type(curr_funcidx);
 
         // Don't transform our own runtime functions
-        if curr_funcidx == self.unreachable_shim {
+        if curr_funcidx == self.unreachable_shim
+            || curr_funcidx == self.write_coredump
+            || curr_funcidx == self.start_frame
+            || curr_funcidx == self.add_i32_local
+            || curr_funcidx == self.add_i64_local
+            || curr_funcidx == self.add_f32_local
+            || curr_funcidx == self.add_f64_local
+        {
             return;
         }
 
         // Replace the `unreachable` instruction with our runtime, for all
-        // instructions except in our runtime.
+        // instructions except the one in our runtime.
         if matches!(ctx.node.value, ast::Instr::unreachable) {
             // call unreachable_shim
             {
@@ -292,6 +306,71 @@ impl Visitor for CoredumpTransform {
             // We don't need to continue in the func, it's unreachable.
             ctx.stop_traversal();
             return;
+        }
+
+        if self.check_memory_operations {
+            if matches!(ctx.node.value, ast::Instr::i32_load(_, _)) {
+                let curr_funcidx = ctx.curr_funcidx.unwrap();
+                // At this point we have one i32 on the stack; the memory address.
+                // Save it in a local.
+                // FIXME: check if function already has our local
+                let address_local = {
+                    let local = ast::CodeLocal {
+                        count: 1,
+                        value_type: ast::ValueType::NumType(ast::NumType::I32),
+                    };
+                    let localidx = ctx.module.func_locals_count(curr_funcidx);
+                    assert!(ctx.module.add_func_local(curr_funcidx, local));
+                    ctx.insert_node_before(ast::Instr::local_tee(localidx));
+
+                    localidx
+                };
+
+                // Compute the amount of memory available
+                // In the future we could compute it ahead of time, after
+                // each memory.grow/shrink call.
+                {
+                    ctx.insert_node_before(ast::Instr::memory_size(0));
+                    ctx.insert_node_before(ast::Instr::i32_const(16 * 1024)); // page size
+                    ctx.insert_node_before(ast::Instr::i32_mul);
+                }
+
+                // Check that the available memory is greater than the address
+                // it's trying to read from.
+                ctx.insert_node_before(ast::Instr::i32_gt_u);
+
+                // Build the consequent branch
+                let consequent = {
+                    let unreachable_shim =
+                        Arc::new(Mutex::new(ast::Value::new(self.unreachable_shim)));
+
+                    if ctx.module.is_func_exported(curr_funcidx) {
+                        // We are at the edge of the module, stop unwinding the
+                        // stack and trap.
+                        let write_coredump =
+                            Arc::new(Mutex::new(ast::Value::new(self.write_coredump)));
+                        ast::Value::new(vec![
+                            ast::Value::new(ast::Instr::call(write_coredump)),
+                            ast::Value::new(ast::Instr::unreachable),
+                            ast::Value::new(ast::Instr::end),
+                        ])
+                    } else {
+                        // FIXME: add a frame here to mark the callsite
+
+                        ast::Value::new(vec![
+                            ast::Value::new(ast::Instr::call(unreachable_shim)),
+                            ast::Value::new(ast::Instr::end),
+                        ])
+                    }
+                };
+
+                ctx.insert_node_before(ast::Instr::If(
+                    ast::BlockType::Empty,
+                    Arc::new(Mutex::new(consequent)),
+                ));
+
+                ctx.insert_node_before(ast::Instr::local_get(address_local));
+            }
         }
 
         // After each call, check if we are unwinding the stack and need to continue

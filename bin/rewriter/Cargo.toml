@@ -17,3 +17,4 @@ log = "0.4.17"
 wasm-parser = { path = "../../lib/parser", version = "0.1.12" }
 wasm-printer = { path = "../../lib/printer", version = "0.1.12" }
 core-wasm-ast = { path = "../../lib/ast", version = "0.1.12" }
+clap = { version = "4.2.5", features = ["derive"] }

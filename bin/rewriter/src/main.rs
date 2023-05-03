@@ -1,5 +1,5 @@
+use clap::Parser;
 use log::info;
-
 use std::io::stdin;
 use std::io::stdout;
 use std::io::Read;
@@ -9,9 +9,20 @@ use std::time::Instant;
 
 mod rewriter;
 
+#[derive(Parser)]
+#[command(author, version, about, long_about = None)]
+struct Args {
+    #[arg(long)]
+    /// Wraps each memory operation.
+    /// This will likely reduce significantly your program's performance.
+    check_memory_operations: bool,
+}
+
 type BoxError = Box<dyn std::error::Error>;
 
 fn main() -> Result<(), BoxError> {
+    let args = Args::parse();
+
     env_logger::init();
 
     let mut input = Vec::new();
@@ -26,7 +37,7 @@ fn main() -> Result<(), BoxError> {
     info!("decode: {:.2?}", elapsed);
 
     let now = Instant::now();
-    rewriter::rewrite(Arc::clone(&module))?;
+    rewriter::rewrite(Arc::clone(&module), args.check_memory_operations)?;
     let elapsed = now.elapsed();
     info!("transform: {:.2?}", elapsed);
 
