@@ -64,6 +64,24 @@ pub fn rewrite(
     };
     debug!("is_unwinding global at {}", is_unwinding);
 
+    // Add `entry_funcidx` global. Tracking the exported function
+    // was the entrypoint
+    let entry_funcidx = {
+        let expr = ast::Value::new(vec![
+            ast::Value::new(ast::Instr::i32_const(0)),
+            ast::Value::new(ast::Instr::end),
+        ]);
+        let global = ast::Global {
+            global_type: ast::GlobalType {
+                valtype: ast::ValueType::NumType(ast::NumType::I32),
+                mutable: true,
+            },
+            expr,
+        };
+        module.add_global(&global).unwrap()
+    };
+    debug!("entry_funcidx global at {}", entry_funcidx);
+
     // Add `unreachable_shim`
     let unreachable_shim = {
         let t = ast::make_type! {};
@@ -152,6 +170,7 @@ pub fn rewrite(
 
     let visitor = CoredumpTransform {
         is_unwinding,
+        entry_funcidx,
         unreachable_shim,
         write_coredump,
         start_frame,
@@ -185,6 +204,7 @@ pub fn locals_flatten(locals: Vec<ast::CodeLocal>) -> Vec<ast::CodeLocal> {
 
 struct CoredumpTransform {
     is_unwinding: u32,
+    entry_funcidx: u32,
     unreachable_shim: u32,
     write_coredump: u32,
     start_frame: u32,
@@ -197,7 +217,29 @@ struct CoredumpTransform {
     check_memory_operations: bool,
 }
 
+fn prepend<T>(v: Vec<T>, s: &[T]) -> Vec<T>
+where
+    T: Clone,
+{
+    let mut tmp: Vec<_> = s.to_owned();
+    tmp.extend(v);
+    tmp
+}
+
 impl Visitor for CoredumpTransform {
+    fn visit_code<'a>(&self, ctx: &'_ mut VisitorContext<'a, ast::Code>, funcidx: u32) {
+        if ctx.module.is_func_exported(funcidx) {
+            let mut body = ctx.node.body.lock().unwrap();
+            body.value = prepend(
+                body.value.clone(),
+                &[
+                    ast::Value::new(ast::Instr::i32_const(funcidx as i64)),
+                    ast::Value::new(ast::Instr::global_set(self.entry_funcidx)),
+                ],
+            );
+        }
+    }
+
     fn visit_instr<'a>(&self, ctx: &mut VisitorContext<'a, ast::Value<ast::Instr>>) {
         let curr_funcidx = ctx.curr_funcidx.unwrap_or_default();
         let curr_func_type = ctx.module.get_func_type(curr_funcidx);
@@ -350,12 +392,10 @@ impl Visitor for CoredumpTransform {
 
                 // Build the consequent branch
                 let consequent = {
-                    let unreachable_shim =
-                        Arc::new(Mutex::new(ast::Value::new(self.unreachable_shim)));
-
                     if ctx.module.is_func_exported(curr_funcidx) {
-                        // We are at the edge of the module, stop unwinding the
-                        // stack and trap.
+                        // The function with the memory fault is exported, at the
+                        // edge of the module, write the coredump instead of
+                        // unwinding.
                         let write_coredump =
                             Arc::new(Mutex::new(ast::Value::new(self.write_coredump)));
                         ast::Value::new(vec![
@@ -366,10 +406,105 @@ impl Visitor for CoredumpTransform {
                     } else {
                         // FIXME: add a frame here to mark the callsite
 
-                        ast::Value::new(vec![
-                            ast::Value::new(ast::Instr::call(unreachable_shim)),
-                            ast::Value::new(ast::Instr::end),
-                        ])
+                        let unreachable_shim =
+                            Arc::new(Mutex::new(ast::Value::new(self.unreachable_shim)));
+                        let mut body = vec![ast::Value::new(ast::Instr::call(unreachable_shim))];
+
+                        // create stack frame
+                        // FIXME: duplicated with line 226
+                        {
+                            let func_locals = ctx.module.func_locals(curr_funcidx);
+                            let locals = locals_flatten(func_locals);
+
+                            let param_count = curr_func_type.params.len();
+
+                            // In Wasm DWARF the offset is relative to the start of the
+                            // code section.
+                            // https://yurydelendik.github.io/webassembly-dwarf/#pc
+                            // let code_offset = ctx.node.start_offset as i64
+                            //     - ctx.module.get_code_section_start_offset().unwrap() as i64;
+                            // body.push(ast::Value::new(ast::Instr::i32_const(code_offset as i64)));
+                            // FIXME: we use the funcidx because the code offset isn't accurate
+                            // or buggy.
+                            body.push(ast::Value::new(ast::Instr::i32_const(curr_funcidx as i64)));
+                            body.push(ast::Value::new(ast::Instr::i32_const(
+                                (locals.len() + param_count) as i64,
+                            ))); // value count
+
+                            let start_frame =
+                                Arc::new(Mutex::new(ast::Value::new(self.start_frame)));
+                            body.push(ast::Value::new(ast::Instr::call(start_frame))); // value count
+
+                            // TODO: for now we don't care about function arguments
+                            // because seems that Rust doesn't really use them anyway.
+                            for i in 0..param_count {
+                                body.push(ast::Value::new(ast::Instr::i32_const(669 + i as i64)));
+
+                                let add_i32_local =
+                                    Arc::new(Mutex::new(ast::Value::new(self.add_i32_local)));
+                                body.push(ast::Value::new(ast::Instr::call(add_i32_local)));
+                            }
+
+                            // Collect the base/stack pointer, usually Rust stores it in
+                            // the first few locals (so after the function params).
+                            let mut local_count = curr_func_type.params.len() as u32;
+
+                            for local in locals {
+                                body.push(ast::Value::new(ast::Instr::local_get(local_count)));
+
+                                if local.value_type == ast::ValueType::NumType(ast::NumType::I64) {
+                                    let add_i64_local =
+                                        Arc::new(Mutex::new(ast::Value::new(self.add_i64_local)));
+                                    body.push(ast::Value::new(ast::Instr::call(add_i64_local)));
+                                }
+
+                                if local.value_type == ast::ValueType::NumType(ast::NumType::F64) {
+                                    let add_f64_local =
+                                        Arc::new(Mutex::new(ast::Value::new(self.add_f64_local)));
+                                    body.push(ast::Value::new(ast::Instr::call(add_f64_local)));
+                                }
+
+                                if local.value_type == ast::ValueType::NumType(ast::NumType::F32) {
+                                    let add_f32_local =
+                                        Arc::new(Mutex::new(ast::Value::new(self.add_f32_local)));
+                                    body.push(ast::Value::new(ast::Instr::call(add_f32_local)));
+                                }
+
+                                if local.value_type == ast::ValueType::NumType(ast::NumType::I32) {
+                                    let add_i32_local =
+                                        Arc::new(Mutex::new(ast::Value::new(self.add_i32_local)));
+                                    body.push(ast::Value::new(ast::Instr::call(add_i32_local)));
+                                }
+
+                                local_count += 1;
+                            }
+                        }
+
+                        // Add values on the stack to satisfy the current function result
+                        // type. Values don't need to be meaningful.
+                        {
+                            for result in &curr_func_type.results {
+                                let instr = match result {
+                                    ast::ValueType::NumType(ast::NumType::I32) => {
+                                        ast::Instr::i32_const(667)
+                                    }
+                                    ast::ValueType::NumType(ast::NumType::I64) => {
+                                        ast::Instr::i64_const(667)
+                                    }
+                                    ast::ValueType::NumType(ast::NumType::F32) => {
+                                        ast::Instr::f32_const(667.0)
+                                    }
+                                    ast::ValueType::NumType(ast::NumType::F64) => {
+                                        ast::Instr::f64_const(667.0)
+                                    }
+                                };
+                                body.push(ast::Value::new(instr));
+                            }
+                        }
+
+                        body.push(ast::Value::new(ast::Instr::Return));
+                        body.push(ast::Value::new(ast::Instr::end));
+                        ast::Value::new(body)
                     }
                 };
 
@@ -463,13 +598,21 @@ impl Visitor for CoredumpTransform {
                     }
                 }
 
-                if ctx.module.is_func_exported(curr_funcidx) {
+                // if we are back to the entrypoint...
+                {
+                    body.push(ast::Value::new(ast::Instr::global_get(self.entry_funcidx)));
+                    body.push(ast::Value::new(ast::Instr::i32_const(curr_funcidx as i64)));
+                    body.push(ast::Value::new(ast::Instr::i32_eq));
+
+                    let mut if_body = vec![];
+
                     // We are at the edge of the module, stop unwinding the
                     // stack and trap.
                     let write_coredump = Arc::new(Mutex::new(ast::Value::new(self.write_coredump)));
-                    body.push(ast::Value::new(ast::Instr::call(write_coredump)));
-                    body.push(ast::Value::new(ast::Instr::unreachable));
-                } else {
+                    if_body.push(ast::Value::new(ast::Instr::call(write_coredump)));
+                    if_body.push(ast::Value::new(ast::Instr::unreachable));
+                    if_body.push(ast::Value::new(ast::Instr::else_end));
+
                     // Add values on the stack to satisfy the current function result
                     // type. Values don't need to be meaningful.
                     {
@@ -488,12 +631,19 @@ impl Visitor for CoredumpTransform {
                                     ast::Instr::f64_const(667.0)
                                 }
                             };
-                            body.push(ast::Value::new(instr));
+                            if_body.push(ast::Value::new(instr));
                         }
                     }
 
-                    body.push(ast::Value::new(ast::Instr::Return));
+                    if_body.push(ast::Value::new(ast::Instr::Return));
+                    if_body.push(ast::Value::new(ast::Instr::end));
+
+                    let if_body = ast::Value::new(if_body);
+                    let if_node =
+                        ast::Instr::If(ast::BlockType::Empty, Arc::new(Mutex::new(if_body)));
+                    body.push(ast::Value::new(if_node));
                 }
+
                 body.push(ast::Value::new(ast::Instr::end));
 
                 let body = ast::Value::new(body);

@@ -8,6 +8,8 @@
   (type (;6;) (func (param f64)))
   (type (;7;) (func (param i64)))
   (func $entry (type 0) (param i32 i32) (result i32)
+    i32.const 0
+    global.set 4
     local.get 0
     local.get 1
     call $addTwo
@@ -20,8 +22,17 @@
       call $coredump/add_i32_local
       i32.const 670
       call $coredump/add_i32_local
-      call $coredump/write_coredump
-      unreachable
+      global.get 4
+      i32.const 0
+      i32.eq
+      i32.eqz
+      if  ;; label = @2
+        call $coredump/write_coredump
+        unreachable
+      else
+        i32.const 667
+        return
+      end
     end)
   (func $addTwo (type 0) (param i32 i32) (result i32)
     local.get 0
@@ -42,6 +53,13 @@
     global.set 3)
   (func $coredump/write_coredump (type 2)
     (local i32 i32 i32 i32 i32 i32 i32 i32 i32)
+    i32.const 0
+    i32.load
+    i32.const 1836278016
+    i32.eq
+    if  ;; label = @1
+      unreachable
+    end
     global.get 2
     local.tee 3
     i32.const 16
@@ -990,6 +1008,13 @@
   (func $coredump/start_frame (type 3) (param i32 i32)
     (local i32)
     i32.const 0
+    i32.load
+    i32.const 1836278016
+    i32.eq
+    if  ;; label = @1
+      unreachable
+    end
+    i32.const 0
     i32.const 0
     i32.load
     i32.const 1
@@ -1096,5 +1121,6 @@
   (global (;1;) i64 (i64.const 2))
   (global (;2;) (mut i32) (i32.const 4))
   (global (;3;) (mut i32) (i32.const 0))
+  (global (;4;) (mut i32) (i32.const 0))
   (export "addTwo" (func $entry))
   (export "memory" (memory 0)))
