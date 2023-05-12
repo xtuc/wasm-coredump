@@ -28,6 +28,9 @@ function write_thread_info(ptr: u32): u32 {
 }
 
 export function start_frame(funcidx: u32, local_count: u32): void {
+  if (load<u32>(0) === 0x6d736100) {
+    unreachable()
+  }
   // update frame counter
   const frame_count = load<u32>(0)
   store<u32>(0, frame_count + 1)
@@ -115,6 +118,10 @@ export function add_i64_local(v: i64): void {
 }
 
 export function write_coredump(): void {
+  if (load<u32>(0) === 0x6d736100) {
+    unreachable()
+  }
+
   let ptr: u32 = 0;
 
   // End of all the frames, aka their cumulative size.
