@@ -62,8 +62,14 @@ pub(crate) fn print_frame<'a>(
                     let size_of = 4;
 
                     let value = if let Ok(addr) = memory::get_param_addr(frame, &func, param) {
-                        let bytes = memory::read(&coredump.data, addr, size_of).unwrap();
-                        format!("0x{}", hex::encode(&bytes))
+                        match memory::read(&coredump.data, addr, size_of) {
+                            Ok(bytes) => {
+                                format!("0x{}", hex::encode(&bytes))
+                            }
+                            Err(err) => {
+                                format!("<failed to load: {}>", err)
+                            }
+                        }
                     } else {
                         "???".to_owned()
                     };
