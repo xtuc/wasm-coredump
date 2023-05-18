@@ -1,6 +1,6 @@
 [package]
 name = "wasm-coredump-encoder"
-version = "0.1.12"
+version = "0.1.13"
 edition = "2021"
 authors = ["Sven Sauleau <sven@sauleau.com>"]
 license = "MIT"
@@ -9,8 +9,8 @@ description = "Wasm coredump encoding"
 
 [dependencies]
 leb128 = "0.2.5"
-wasm-coredump-types = { path = "../coredump-types", version = "0.1.12" }
+wasm-coredump-types = { path = "../coredump-types", version = "0.1.13" }
 
 [dev-dependencies]
-wasm-printer = { path = "../printer", version = "0.1.12" }
-wasm-coredump-builder = { path = "../coredump-builder", version = "0.1.12" }
+wasm-printer = { path = "../printer", version = "0.1.13" }
+wasm-coredump-builder = { path = "../coredump-builder", version = "0.1.13" }

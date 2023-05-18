@@ -1,11 +1,11 @@
 [package]
 name = "coredump-dump"
-version = "0.1.12"
+version = "0.1.13"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-wasm-parser = { path = "../../lib/parser", version = "0.1.12" }
-wasm-printer = { path = "../../lib/printer", version = "0.1.12" }
-core-wasm-ast = { path = "../../lib/ast", version = "0.1.12" }
+wasm-parser = { path = "../../lib/parser", version = "0.1.13" }
+wasm-printer = { path = "../../lib/printer", version = "0.1.13" }
+core-wasm-ast = { path = "../../lib/ast", version = "0.1.13" }
