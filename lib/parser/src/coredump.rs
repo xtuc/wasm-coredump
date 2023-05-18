@@ -35,7 +35,7 @@ pub(crate) fn decode_core_stack<'a>(
     let (ctx, thread_info) = decode_thread_info(ctx)?;
     debug!("thread_info {:?}", thread_info);
 
-    let (ctx, nframes) = ctx.read_u32()?;
+    let (ctx, nframes) = ctx.read_leb128()?;
     debug!("nframe {}", nframes);
 
     let mut frames = vec![];
@@ -61,10 +61,10 @@ pub(crate) fn decode_stack_frame<'a>(
         unimplemented!("unsupported frame type {}", v);
     }
 
-    let (ctx, funcidx) = ctx.read_u32()?;
-    let (ctx, codeoffset) = ctx.read_u32()?;
-    let (ctx, count_local) = ctx.read_u32()?;
-    let (ctx, _count_stack) = ctx.read_u32()?;
+    let (ctx, funcidx) = ctx.read_leb128()?;
+    let (ctx, codeoffset) = ctx.read_leb128()?;
+    let (ctx, count_local) = ctx.read_leb128()?;
+    let (ctx, _count_stack) = ctx.read_leb128()?;
 
     let mut locals = Vec::with_capacity(count_local as usize);
     let mut ctx = ctx;

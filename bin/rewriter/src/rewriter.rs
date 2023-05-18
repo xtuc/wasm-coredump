@@ -3,7 +3,7 @@
 //! Informations about the stack is recorded at offset 0 in memory with the
 //! following structure:
 //!
-//! | number of frames (u32) | frame* |
+//! | frame* |
 //!
 //! Where a `frame` is the Coredump frame encoding.
 
@@ -25,8 +25,7 @@ pub fn rewrite(
     // Pointer or cursor to the latest frame
     let frames_ptr_global = {
         let expr = ast::Value::new(vec![
-            // The first frame starts after the "number of frames (u32)".
-            ast::Value::new(ast::Instr::i32_const(4)),
+            ast::Value::new(ast::Instr::i32_const(0)),
             ast::Value::new(ast::Instr::end),
         ]);
         let global = ast::Global {
@@ -40,7 +39,24 @@ pub fn rewrite(
     };
     debug!("frames_ptr_global global at {}", frames_ptr_global);
 
-    let runtime = get_runtime(frames_ptr_global)?;
+    // Keep track of number of frames
+    let frames_count_global = {
+        let expr = ast::Value::new(vec![
+            ast::Value::new(ast::Instr::i32_const(0)),
+            ast::Value::new(ast::Instr::end),
+        ]);
+        let global = ast::Global {
+            global_type: ast::GlobalType {
+                valtype: ast::ValueType::NumType(ast::NumType::I32),
+                mutable: true,
+            },
+            expr,
+        };
+        module.add_global(&global).unwrap()
+    };
+    debug!("frames_count_global global at {}", frames_count_global);
+
+    let runtime = get_runtime(frames_ptr_global, frames_count_global)?;
 
     debug!(
         "code section starts at {}",

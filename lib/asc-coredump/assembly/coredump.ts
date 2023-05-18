@@ -1,8 +1,12 @@
 import * as wasm from 'asc-wasm/assembly'
 
 // Pointer or cursor to the latest frame
-// The first frame starts after the "number of frames (u32)".
-var frames_ptr: u32 = sizeof<u32>() * 1;
+// Assumed to be globalidx 0 by bin/rewriter/src/runtime.rs
+var frames_ptr: u32 = 0;
+
+// Keep track of number of frames
+// Assumed to be globalidx 1 by bin/rewriter/src/runtime.rs
+var frame_count: u32 = 0;
 
 @inline
 function write_u8(ptr: u32, v: u8): u32 {
@@ -29,26 +33,22 @@ function write_thread_info(ptr: u32): u32 {
 
 export function start_frame(funcidx: u32, local_count: u32): void {
   if (load<u32>(0) === 0x6d736100) {
+    // Check for the presence of the wasm\0 header, meaning a coredump
+    // would already have been written.
     unreachable()
   }
-  // update frame counter
-  const frame_count = load<u32>(0)
-  store<u32>(0, frame_count + 1)
 
   let ptr = frames_ptr;
 
   // Create frame struct
   ptr += write_u8(ptr, 0) // frame version 0
-  store<u32>(ptr, funcidx)
-  ptr += 4
-  store<u32>(ptr, 0) // codeoffset
-  ptr += 4
-  store<u32>(ptr, local_count)
-  ptr += 4
-  store<u32>(ptr, 0) // stack count
-  ptr += 4
+  ptr += wasm.write_leb128_u32(ptr, funcidx)
+  ptr += wasm.write_leb128_u32(ptr, 0) // codeoffset
+  ptr += wasm.write_leb128_u32(ptr, local_count)
+  ptr += wasm.write_leb128_u32(ptr, 0) // stack count
 
   frames_ptr = ptr
+  frame_count = frame_count + 1;
 }
 
 export function add_missing_local(): void {
@@ -119,6 +119,8 @@ export function add_i64_local(v: i64): void {
 
 export function write_coredump(): void {
   if (load<u32>(0) === 0x6d736100) {
+    // Check for the presence of the wasm\0 header, meaning a coredump
+    // would already have been written.
     unreachable()
   }
 
@@ -134,6 +136,7 @@ export function write_coredump(): void {
     + 1 // thread info type
     + 1 // thread name size
     + 4 // thread name
+    + wasm.leb128_u32_byte_size(frame_count) // frame count
 
   // The `corestack` section contains the coredump stack frames. We wrote the
   // frames in the memory and we construct the Wasm section around them.
@@ -147,6 +150,7 @@ export function write_coredump(): void {
     + 1 // thread info type
     + 1 // thread name size
     + 4 // thread name
+    + wasm.leb128_u32_byte_size(frame_count) // frame count
   memory.copy(start_corestack_section, 0, frames_size);
 
   // Wasm header
@@ -158,6 +162,9 @@ export function write_coredump(): void {
     // Section name. Avoids statically allocated strings by writing char manually
     ptr += wasm.write_vec9(ptr, 99, 111, 114, 101, 115, 116, 97, 99, 107)
     ptr += write_thread_info(ptr)
+
+    // Number of frames
+    ptr += wasm.write_leb128_u32(ptr, frame_count)
 
     // the content is followed, it was copied earlier.
     ptr += frames_size

@@ -6,10 +6,6 @@ mod test;
 
 type BoxError = Box<dyn std::error::Error + Sync + Send>;
 
-fn write_u32(buffer: &mut Vec<u8>, n: u32) {
-    buffer.extend_from_slice(&n.to_le_bytes());
-}
-
 pub(crate) fn write_unsigned_leb128(buffer: &mut Vec<u8>, n: u64) {
     leb128::write::unsigned(buffer, n).expect("could not write LEB128");
 }
@@ -41,14 +37,14 @@ pub fn encode_coredump_stack(
     }
 
     // frames
-    write_u32(buffer, stack.frames.len() as u32);
+    write_unsigned_leb128(buffer, stack.frames.len() as u64);
 
     for frame in &stack.frames {
         buffer.push(0x0); // version 0
-        write_u32(buffer, frame.funcidx);
-        write_u32(buffer, frame.codeoffset);
-        write_u32(buffer, 0); // locals vec size
-        write_u32(buffer, 0); // stack vec size
+        write_unsigned_leb128(buffer, frame.funcidx as u64);
+        write_unsigned_leb128(buffer, frame.codeoffset as u64);
+        write_unsigned_leb128(buffer, 0); // locals vec size
+        write_unsigned_leb128(buffer, 0); // stack vec size
     }
 
     Ok(())
