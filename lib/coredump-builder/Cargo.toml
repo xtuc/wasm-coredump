@@ -11,3 +11,6 @@ description = "Wasm coredump builder API for Rust"
 wasm-coredump-types = { path = "../coredump-types", version = "0.1.13" }
 wasm-coredump-encoder = { path = "../coredump-encoder", version = "0.1.13" }
 wasm-encoder = "0.23.0"
+
+[dev-dependencies]
+wasm-printer = { path = "../printer", version = "0.1.13" }

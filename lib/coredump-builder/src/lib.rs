@@ -26,6 +26,9 @@
 
 type BoxError = Box<dyn std::error::Error + Sync + Send>;
 
+#[cfg(test)]
+mod test;
+
 #[derive(Default)]
 /// Coredump stack frame builder
 pub struct FrameBuilder {

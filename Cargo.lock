@@ -1582,6 +1582,7 @@ dependencies = [
  "wasm-coredump-encoder",
  "wasm-coredump-types",
  "wasm-encoder 0.23.0",
+ "wasm-printer",
 ]
 
 [[package]]
@@ -1589,9 +1590,7 @@ name = "wasm-coredump-encoder"
 version = "0.1.13"
 dependencies = [
  "leb128",
- "wasm-coredump-builder",
  "wasm-coredump-types",
- "wasm-printer",
 ]
 
 [[package]]

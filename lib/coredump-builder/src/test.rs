@@ -1,24 +1,18 @@
+use super::{CoredumpBuilder, FrameBuilder, ThreadBuilder};
+
 #[test]
 fn test_basic() {
-    let mut coredump_builder =
-        wasm_coredump_builder::CoredumpBuilder::new().executable_name("foo.exe");
+    let mut coredump_builder = CoredumpBuilder::new().executable_name("foo.exe");
 
     {
-        let mut thread_builder =
-            wasm_coredump_builder::ThreadBuilder::new().thread_name("main-thread");
+        let mut thread_builder = ThreadBuilder::new().thread_name("main-thread");
 
         {
-            let coredump_frame = wasm_coredump_builder::FrameBuilder::new()
-                .codeoffset(123)
-                .funcidx(456)
-                .build();
+            let coredump_frame = FrameBuilder::new().codeoffset(123).funcidx(456).build();
             thread_builder.add_frame(coredump_frame);
         }
         {
-            let coredump_frame = wasm_coredump_builder::FrameBuilder::new()
-                .codeoffset(789)
-                .funcidx(0)
-                .build();
+            let coredump_frame = FrameBuilder::new().codeoffset(789).funcidx(0).build();
             thread_builder.add_frame(coredump_frame);
         }
 

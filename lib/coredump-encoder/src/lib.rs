@@ -1,9 +1,6 @@
 use std::io::Write;
 use wasm_coredump_types as types;
 
-#[cfg(test)]
-mod test;
-
 type BoxError = Box<dyn std::error::Error + Sync + Send>;
 
 pub(crate) fn write_unsigned_leb128(buffer: &mut Vec<u8>, n: u64) {
