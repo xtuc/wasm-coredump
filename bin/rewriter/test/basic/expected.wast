@@ -25,7 +25,6 @@
       global.get 2
       i32.const 0
       i32.eq
-      i32.eqz
       if  ;; label = @2
         call $coredump/write_coredump
         unreachable
