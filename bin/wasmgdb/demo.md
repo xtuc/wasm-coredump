@@ -49,7 +49,7 @@ fn calculate(value: usize) -> usize {
 Now let's analyze the crash in [wasmgdb] to see where it went wrong (if you didn't spot it from my broken code already).
 
 ```
-$ wasmgdb coredump.* ./test-program/target/wasm32-wasi/debug/test-program.wasm
+$ wasmgdb ./test-program/target/wasm32-wasi/debug/test-program.wasm coredump.*
 wasmgdb>
 ```
 We enter a repl similar to gdb, commands are mostly the same.

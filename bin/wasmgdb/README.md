@@ -16,7 +16,7 @@ traps, collect the WebAssembly memory and analyze the coredump.
 ### Analyze a coredump
 
 ```
-wasmgdb source.wasm coredump.data
+wasmgdb <source.wasm> <coredump.data>
 ```
 
 ### Commands
