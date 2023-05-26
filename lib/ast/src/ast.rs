@@ -438,6 +438,8 @@ pub struct Import {
 #[derive(Debug, Clone)]
 pub enum ImportType {
     Func(u32),
+    Table(Table),
+    Memory(Memory),
     Global(GlobalType),
 }
 

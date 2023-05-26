@@ -104,6 +104,16 @@ fn write_section_import(buffer: &mut Vec<u8>, content: &Vec<ast::Import>) -> Res
                 write_unsigned_leb128(buffer, *funcidx as u64);
             }
 
+            ast::ImportType::Table(table) => {
+                buffer.push(0x1);
+                write_table(buffer, table)?;
+            }
+
+            ast::ImportType::Memory(mem) => {
+                buffer.push(0x2);
+                write_memory(buffer, mem)?;
+            }
+
             ast::ImportType::Global(globaltype) => {
                 buffer.push(0x3);
 
@@ -124,10 +134,15 @@ fn write_section_table(buffer: &mut Vec<u8>, content: &Vec<ast::Table>) -> Resul
     write_vec_len(buffer, content); // vec length
 
     for table in content {
-        write_reftype(buffer, &table.reftype);
-        write_limits(buffer, &table.limits);
+        write_table(buffer, table)?;
     }
 
+    Ok(())
+}
+
+fn write_table(buffer: &mut Vec<u8>, table: &ast::Table) -> Result<(), BoxError> {
+    write_reftype(buffer, &table.reftype);
+    write_limits(buffer, &table.limits);
     Ok(())
 }
 
@@ -160,14 +175,20 @@ fn write_section_memory(buffer: &mut Vec<u8>, content: &Vec<ast::Memory>) -> Res
     write_vec_len(buffer, content); // vec length
 
     for mem in content {
-        if let Some(max) = mem.max {
-            buffer.push(0x1);
-            write_unsigned_leb128(buffer, mem.min.value as u64);
-            write_unsigned_leb128(buffer, max as u64);
-        } else {
-            buffer.push(0x0);
-            write_unsigned_leb128(buffer, mem.min.value as u64);
-        }
+        write_memory(buffer, mem)?;
+    }
+
+    Ok(())
+}
+
+fn write_memory(buffer: &mut Vec<u8>, mem: &ast::Memory) -> Result<(), BoxError> {
+    if let Some(max) = mem.max {
+        buffer.push(0x1);
+        write_unsigned_leb128(buffer, mem.min.value as u64);
+        write_unsigned_leb128(buffer, max as u64);
+    } else {
+        buffer.push(0x0);
+        write_unsigned_leb128(buffer, mem.min.value as u64);
     }
 
     Ok(())

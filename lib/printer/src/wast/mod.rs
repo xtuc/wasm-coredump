@@ -83,6 +83,14 @@ impl<'a, W: Write> WastPrinter<'a, W> {
                 }
             }
 
+            ast::ImportType::Table(_tabletype) => {
+                write!(self.out, "(table)")?;
+            }
+
+            ast::ImportType::Memory(_globaltype) => {
+                write!(self.out, "(memory)")?;
+            }
+
             ast::ImportType::Global(_globaltype) => {
                 write!(self.out, "(global)")?;
             }

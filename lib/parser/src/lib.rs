@@ -387,6 +387,14 @@ fn decode_import<'a>(ctx: InputContext<'a>) -> IResult<InputContext<'a>, ast::Im
             let (ctx, typeidx) = ctx.read_leb128()?;
             (ctx, ast::ImportType::Func(typeidx))
         }
+        0x01 => {
+            let (ctx, tabletype) = decode_table(ctx)?;
+            (ctx, ast::ImportType::Table(tabletype))
+        }
+        0x02 => {
+            let (ctx, memtype) = decode_memory(ctx)?;
+            (ctx, ast::ImportType::Memory(memtype))
+        }
         0x03 => {
             let (ctx, globaltype) = decode_global_type(ctx)?;
             (ctx, ast::ImportType::Global(globaltype))
