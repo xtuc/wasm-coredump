@@ -1,6 +1,6 @@
 [package]
 name = "wasm-printer"
-version = "0.1.14"
+version = "0.1.15"
 edition = "2021"
 authors = ["Sven Sauleau <sven@sauleau.com>"]
 license = "MIT"
@@ -10,8 +10,8 @@ description = "Wasm printer"
 
 [dependencies]
 core-wasm-ast = { path = "../ast", version = "0.1.0" }
-wasm-coredump-types = { path = "../coredump-types", version = "0.1.14" }
-wasm-coredump-encoder = { path = "../coredump-encoder", version = "0.1.14" }
+wasm-coredump-types = { path = "../coredump-types", version = "0.1.15" }
+wasm-coredump-encoder = { path = "../coredump-encoder", version = "0.1.15" }
 log = "0.4.17"
 leb128 = "0.2.5"
 byteorder = "1.4.3"
