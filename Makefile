@@ -30,3 +30,4 @@ publish:
 	cd ./bin/rewriter && cargo publish --allow-dirty
 	cd ./bin/wasmgdb && cargo publish
 	cd ./lib/coredump-builder && cargo publish
+	cd ./lib/coredump-to-stack && cargo publish

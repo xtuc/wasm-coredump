@@ -314,7 +314,7 @@ dependencies = [
 
 [[package]]
 name = "core-wasm-ast"
-version = "0.1.15"
+version = "0.1.16"
 dependencies = [
  "log",
  "num_cpus",
@@ -324,7 +324,7 @@ dependencies = [
 
 [[package]]
 name = "coredump-dump"
-version = "0.1.15"
+version = "0.1.16"
 dependencies = [
  "core-wasm-ast",
  "wasm-parser",
@@ -333,7 +333,7 @@ dependencies = [
 
 [[package]]
 name = "coredump-to-stack"
-version = "0.1.0"
+version = "0.1.16"
 dependencies = [
  "core-wasm-ast",
  "wasm-parser",
@@ -1586,7 +1586,7 @@ dependencies = [
 
 [[package]]
 name = "wasm-coredump-builder"
-version = "0.1.15"
+version = "0.1.16"
 dependencies = [
  "wasm-coredump-encoder",
  "wasm-coredump-types",
@@ -1596,7 +1596,7 @@ dependencies = [
 
 [[package]]
 name = "wasm-coredump-encoder"
-version = "0.1.15"
+version = "0.1.16"
 dependencies = [
  "leb128",
  "wasm-coredump-types",
@@ -1604,7 +1604,7 @@ dependencies = [
 
 [[package]]
 name = "wasm-coredump-rewriter"
-version = "0.1.15"
+version = "0.1.16"
 dependencies = [
  "clap",
  "core-wasm-ast",
@@ -1616,7 +1616,7 @@ dependencies = [
 
 [[package]]
 name = "wasm-coredump-types"
-version = "0.1.15"
+version = "0.1.16"
 
 [[package]]
 name = "wasm-encoder"
@@ -1638,7 +1638,7 @@ dependencies = [
 
 [[package]]
 name = "wasm-parser"
-version = "0.1.15"
+version = "0.1.16"
 dependencies = [
  "core-wasm-ast",
  "env_logger 0.9.3",
@@ -1653,7 +1653,7 @@ dependencies = [
 
 [[package]]
 name = "wasm-printer"
-version = "0.1.15"
+version = "0.1.16"
 dependencies = [
  "byteorder",
  "colored",
@@ -1666,7 +1666,7 @@ dependencies = [
 
 [[package]]
 name = "wasmgdb"
-version = "0.1.15"
+version = "0.1.16"
 dependencies = [
  "clap",
  "colored",
