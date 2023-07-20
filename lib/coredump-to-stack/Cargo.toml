@@ -3,6 +3,9 @@ name = "coredump-to-stack"
 version = "0.1.16"
 edition = "2021"
 authors = ["Sven Sauleau <sven@sauleau.com>"]
+license = "MIT"
+repository = "https://github.com/xtuc/wasm-coredump/tree/main/lib/coredump-to-stack"
+description = "Convert a Wasm coredump to a Stacktrace, resolving symbols."
 
 [dependencies]
 wasm-parser = { path = "../../lib/parser", version = "0.1.16" }
