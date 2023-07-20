@@ -14,6 +14,8 @@ use log::debug;
 use std::sync::Arc;
 use std::sync::Mutex;
 
+const NO_ENTRY_FUNCIDX_VALUE: i32 = i32::MAX;
+
 type BoxError = Box<dyn std::error::Error>;
 
 pub fn rewrite(
@@ -84,7 +86,7 @@ pub fn rewrite(
     // was the entrypoint
     let entry_funcidx = {
         let expr = ast::Value::new(vec![
-            ast::Value::new(ast::Instr::i32_const(0)),
+            ast::Value::new(ast::Instr::i32_const(NO_ENTRY_FUNCIDX_VALUE as i64)),
             ast::Value::new(ast::Instr::end),
         ]);
         let global = ast::Global {
@@ -245,14 +247,28 @@ where
 impl Visitor for CoredumpTransform {
     fn visit_code<'a>(&self, ctx: &'_ mut VisitorContext<'a, ast::Code>, funcidx: u32) {
         if ctx.module.is_func_exported(funcidx) {
-            let mut body = ctx.node.body.lock().unwrap();
-            body.value = prepend(
-                body.value.clone(),
-                &[
-                    ast::Value::new(ast::Instr::i32_const(funcidx as i64)),
-                    ast::Value::new(ast::Instr::global_set(self.entry_funcidx)),
-                ],
-            );
+            let mut func_body = ctx.node.body.lock().unwrap();
+
+            let mut new_code = vec![];
+
+            new_code.push(ast::Value::new(ast::Instr::global_get(self.entry_funcidx)));
+            new_code.push(ast::Value::new(ast::Instr::i32_const(
+                NO_ENTRY_FUNCIDX_VALUE as i64,
+            )));
+            new_code.push(ast::Value::new(ast::Instr::i32_eq));
+
+            let mut if_body = vec![];
+            {
+                if_body.push(ast::Value::new(ast::Instr::i32_const(funcidx as i64)));
+                if_body.push(ast::Value::new(ast::Instr::global_set(self.entry_funcidx)));
+                if_body.push(ast::Value::new(ast::Instr::end));
+            }
+
+            let if_body = ast::Value::new(if_body);
+            let if_node = ast::Instr::If(ast::BlockType::Empty, Arc::new(Mutex::new(if_body)));
+            new_code.push(ast::Value::new(if_node));
+
+            func_body.value = prepend(func_body.value.clone(), &new_code);
         }
     }
 

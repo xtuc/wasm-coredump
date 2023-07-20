@@ -10,8 +10,13 @@
   (type (;8;) (func (param i64)))
   (func $valid (type 0) (result i32)
     (local i32)
-    i32.const 0
-    global.set 3
+    global.get 3
+    i32.const 2147483647
+    i32.eq
+    if  ;; label = @1
+      i32.const 0
+      global.set 3
+    end
     i32.const 0
     i32.const 123
     i32.store
@@ -29,8 +34,13 @@
     i32.load)
   (func $invalid (type 0) (result i32)
     (local i32)
-    i32.const 1
-    global.set 3
+    global.get 3
+    i32.const 2147483647
+    i32.eq
+    if  ;; label = @1
+      i32.const 1
+      global.set 3
+    end
     i32.const 16392
     local.tee 0
     memory.size
@@ -45,8 +55,13 @@
     i32.load)
   (func $invalid_with_locals (type 0) (result i32)
     (local i32 i64 i32)
-    i32.const 2
-    global.set 3
+    global.get 3
+    i32.const 2147483647
+    i32.eq
+    if  ;; label = @1
+      i32.const 2
+      global.set 3
+    end
     i32.const 16392
     local.tee 2
     memory.size
@@ -96,8 +111,13 @@
       end
     end)
   (func $invalid_nested2 (type 1)
-    i32.const 5
-    global.set 3
+    global.get 3
+    i32.const 2147483647
+    i32.eq
+    if  ;; label = @1
+      i32.const 5
+      global.set 3
+    end
     call $invalid_nested1
     global.get 2
     if  ;; label = @1
@@ -281,84 +301,84 @@
     i32.const 127
     i32.and
     i32.store8
-    local.get 2
     local.get 4
     i32.const 1
     i32.add
     local.tee 0
+    local.get 2
     i32.add
     i32.const 99
     i32.store8
-    local.get 2
     local.get 0
     i32.const 1
     i32.add
     local.tee 0
+    local.get 2
     i32.add
     i32.const 111
     i32.store8
-    local.get 2
     local.get 0
     i32.const 1
     i32.add
     local.tee 0
+    local.get 2
     i32.add
     i32.const 114
     i32.store8
-    local.get 2
     local.get 0
     i32.const 1
     i32.add
     local.tee 0
+    local.get 2
     i32.add
     i32.const 101
     i32.store8
-    local.get 2
     local.get 0
     i32.const 1
     i32.add
     local.tee 0
+    local.get 2
     i32.add
     i32.const 115
     i32.store8
-    local.get 2
     local.get 0
     i32.const 1
     i32.add
     local.tee 0
+    local.get 2
     i32.add
     i32.const 116
     i32.store8
-    local.get 2
     local.get 0
     i32.const 1
     i32.add
     local.tee 0
+    local.get 2
     i32.add
     i32.const 97
     i32.store8
-    local.get 2
     local.get 0
     i32.const 1
     i32.add
     local.tee 0
+    local.get 2
     i32.add
     i32.const 99
     i32.store8
-    local.get 2
     local.get 0
     i32.const 1
     i32.add
     local.tee 1
+    local.get 2
     i32.add
     i32.const 107
     i32.store8
     i32.const 0
     local.set 0
+    local.get 2
     local.get 1
     i32.const 1
     i32.add
-    local.get 2
     i32.add
     local.tee 1
     i32.const 0
@@ -401,42 +421,42 @@
     i32.const 127
     i32.and
     i32.store8
-    local.get 3
     local.get 0
     i32.const 1
     i32.add
     local.tee 0
+    local.get 3
     i32.add
     i32.const 109
     i32.store8
-    local.get 3
     local.get 0
     i32.const 1
     i32.add
     local.tee 0
+    local.get 3
     i32.add
     i32.const 97
     i32.store8
-    local.get 3
     local.get 0
     i32.const 1
     i32.add
     local.tee 0
+    local.get 3
     i32.add
     i32.const 105
     i32.store8
-    local.get 3
     local.get 0
     i32.const 1
     i32.add
     local.tee 0
+    local.get 3
     i32.add
     i32.const 110
     i32.store8
+    local.get 1
     local.get 0
     i32.const 2
     i32.add
-    local.get 1
     i32.add
     local.set 1
     global.get 1
@@ -475,12 +495,12 @@
     i32.const 127
     i32.and
     i32.store8
-    local.get 5
+    local.get 1
     local.get 3
     i32.const 1
     i32.add
-    local.get 1
     i32.add
+    local.get 5
     i32.add
     local.tee 0
     i32.const 0
@@ -525,10 +545,10 @@
     i32.const 127
     i32.and
     i32.store8
+    local.get 0
     local.get 3
     i32.const 2
     i32.add
-    local.get 0
     i32.add
     local.set 2
     i32.const 4
@@ -567,42 +587,42 @@
     i32.const 127
     i32.and
     i32.store8
-    local.get 2
     local.get 0
     i32.const 1
     i32.add
     local.tee 0
+    local.get 2
     i32.add
     i32.const 99
     i32.store8
-    local.get 2
     local.get 0
     i32.const 1
     i32.add
     local.tee 0
+    local.get 2
     i32.add
     i32.const 111
     i32.store8
-    local.get 2
     local.get 0
     i32.const 1
     i32.add
     local.tee 0
+    local.get 2
     i32.add
     i32.const 114
     i32.store8
-    local.get 2
     local.get 0
     i32.const 1
     i32.add
     local.tee 0
+    local.get 2
     i32.add
     i32.const 101
     i32.store8
+    local.get 2
     local.get 0
     i32.const 1
     i32.add
-    local.get 2
     i32.add
     local.tee 0
     i32.const 0
@@ -680,10 +700,10 @@
     i32.const 127
     i32.and
     i32.store8
+    local.get 5
     local.get 4
     i32.const 2
     i32.add
-    local.get 5
     i32.add
     local.set 1
     i32.const 1
@@ -722,10 +742,10 @@
     i32.const 127
     i32.and
     i32.store8
+    local.get 1
     local.get 3
     i32.const 1
     i32.add
-    local.get 1
     i32.add
     local.tee 0
     i32.const 1
@@ -770,11 +790,11 @@
     i32.const 127
     i32.and
     i32.store8
-    local.get 0
     local.get 4
     i32.const 2
     i32.add
     local.tee 3
+    local.get 0
     i32.add
     local.set 5
     local.get 2
@@ -817,12 +837,12 @@
     i32.const 16
     i32.shl
     local.tee 5
+    local.get 0
+    local.get 3
     local.get 4
     i32.const 1
     i32.add
-    local.get 3
     i32.add
-    local.get 0
     i32.add
     local.tee 1
     i32.sub
@@ -893,10 +913,10 @@
     i32.const 127
     i32.and
     i32.store8
+    local.get 1
     local.get 0
     i32.const 2
     i32.add
-    local.get 1
     i32.add
     local.set 0
     i32.const 1
@@ -935,10 +955,10 @@
     i32.const 127
     i32.and
     i32.store8
+    local.get 0
     local.get 3
     i32.const 1
     i32.add
-    local.get 0
     i32.add
     local.set 0
     i32.const 0
@@ -977,10 +997,10 @@
     i32.const 127
     i32.and
     i32.store8
+    local.get 0
     local.get 3
     i32.const 1
     i32.add
-    local.get 0
     i32.add
     local.tee 6
     local.set 1
@@ -1035,10 +1055,10 @@
     i32.const 1
     i32.add
     local.set 4
+    local.get 3
     local.get 0
     local.get 6
     i32.add
-    local.get 3
     i32.add
     i32.const 3
     i32.add
@@ -1093,10 +1113,10 @@
         br 1 (;@1;)
       end
     end
+    local.get 6
     local.get 1
     i32.const 1
     i32.add
-    local.get 6
     i32.add
     local.tee 0
     i32.const 11
@@ -1216,10 +1236,10 @@
     i32.const 127
     i32.and
     i32.store8
+    local.get 3
     local.get 2
     i32.const 1
     i32.add
-    local.get 3
     i32.add
     local.set 3
     i32.const 0
@@ -1258,10 +1278,10 @@
     i32.const 127
     i32.and
     i32.store8
+    local.get 3
     local.get 2
     i32.const 1
     i32.add
-    local.get 3
     i32.add
     local.set 0
     i32.const 0
@@ -1298,10 +1318,10 @@
     i32.const 127
     i32.and
     i32.store8
+    local.get 0
     local.get 2
     i32.const 1
     i32.add
-    local.get 0
     i32.add
     local.set 1
     i32.const 0
@@ -1340,10 +1360,10 @@
     i32.const 127
     i32.and
     i32.store8
+    local.get 1
     local.get 2
     i32.const 1
     i32.add
-    local.get 1
     i32.add
     global.set 0
     global.get 1
@@ -1418,7 +1438,7 @@
   (global (;0;) (mut i32) (i32.const 0))
   (global (;1;) (mut i32) (i32.const 0))
   (global (;2;) (mut i32) (i32.const 0))
-  (global (;3;) (mut i32) (i32.const 0))
+  (global (;3;) (mut i32) (i32.const 2147483647))
   (export "valid" (func $valid))
   (export "invalid" (func $invalid))
   (export "invalid_with_locals" (func $invalid_with_locals))
