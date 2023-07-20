@@ -6,5 +6,6 @@ members = [
   "lib/coredump-builder",
   "lib/coredump-encoder",
   "lib/coredump-types",
+  "lib/coredump-to-stack",
   "bin/*",
 ]

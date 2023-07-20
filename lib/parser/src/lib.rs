@@ -140,6 +140,14 @@ pub fn parse<'a>(input: &'a [u8]) -> Result<ast::Module, BoxError> {
     }
 }
 
+pub fn parse_custom_section_name<'a>(input: &'a [u8]) -> Result<ast::DebugNames, BoxError> {
+    let input = InputContext { input, offset: 0 };
+    match decode_section_custom_name(input) {
+        Ok((_, names)) => Ok(names),
+        Err(err) => Err(format!("failed to decode name section: {}", err).into()),
+    }
+}
+
 fn decode_module<'a>(ctx: InputContext<'a>) -> IResult<InputContext<'a>, ast::Module> {
     let (ctx, magic) = ctx.read_bytes(4)?;
     if magic != b"\0asm" {

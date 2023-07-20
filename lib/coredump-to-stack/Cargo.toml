@@ -1,0 +1,10 @@
+[package]
+name = "coredump-to-stack"
+version = "0.1.15"
+edition = "2021"
+authors = ["Sven Sauleau <sven@sauleau.com>"]
+
+[dependencies]
+wasm-parser = { path = "../../lib/parser", version = "0.1.15" }
+wasm-printer = { path = "../../lib/printer", version = "0.1.15" }
+core-wasm-ast = { path = "../../lib/ast", version = "0.1.15" }
