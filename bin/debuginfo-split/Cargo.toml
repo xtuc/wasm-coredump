@@ -1,0 +1,16 @@
+[package]
+name = "debuginfo-split"
+version = "0.1.0"
+edition = "2021"
+authors = ["Sven Sauleau <sven@sauleau.com>"]
+license = "MIT"
+repository = "https://github.com/xtuc/wasm-coredump/tree/main/bin/debuginfo-split"
+description = "Splits out the debugging informations"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+wasm-printer = { path = "../../lib/printer", version = "0.1.16" }
+wasm-parser = { path = "../../lib/parser", version = "0.1.16" }
+core-wasm-ast = { path = "../../lib/ast", version = "0.1.16" }
+clap = { version = "4.1.4", features = ["derive"] }

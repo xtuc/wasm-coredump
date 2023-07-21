@@ -409,7 +409,7 @@ impl Value<Section> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum CustomSection {
     Unknown(String, Vec<u8>),
     Name(DebugNames),
@@ -489,7 +489,7 @@ pub struct GlobalType {
     pub mutable: bool,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct DebugNames {
     pub module: Option<String>,
     pub func_names: Option<Arc<Mutex<HashMap<u32, String>>>>,

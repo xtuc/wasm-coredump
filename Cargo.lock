@@ -520,6 +520,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "debuginfo-split"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "core-wasm-ast",
+ "wasm-parser",
+ "wasm-printer",
+]
+
+[[package]]
 name = "digest"
 version = "0.10.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"

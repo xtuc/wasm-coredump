@@ -300,7 +300,10 @@ fn write_section_custom(
             write_utf8(buffer, &name);
             buffer.extend_from_slice(&bytes);
         }
-        ast::CustomSection::Name(content) => write_section_custom_name(buffer, &content)?,
+        ast::CustomSection::Name(content) => {
+            write_utf8(buffer, "name");
+            write_section_custom_name(buffer, &content)?
+        },
 
         ast::CustomSection::CoredumpCore(content) => {
             write_utf8(buffer, "core");
@@ -316,12 +319,10 @@ fn write_section_custom(
     Ok(())
 }
 
-fn write_section_custom_name(
+pub fn write_section_custom_name(
     buffer: &mut Vec<u8>,
     content: &ast::DebugNames,
 ) -> Result<(), BoxError> {
-    write_utf8(buffer, "name");
-
     if let Some(_module_name) = &content.module {
         warn!("Module Name not implemented yet")
     }

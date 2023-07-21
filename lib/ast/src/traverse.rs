@@ -19,6 +19,7 @@ pub struct WasmModule {
     imports: Vec<ast::Import>,
     globals: Vec<ast::Global>,
     exports: Vec<ast::Export>,
+    custom_sections: Vec<ast::CustomSection>,
 }
 impl WasmModule {
     pub fn new(inner: Arc<ast::Module>) -> Self {
@@ -28,6 +29,7 @@ impl WasmModule {
         let mut imports = Vec::new();
         let mut globals = Vec::new();
         let mut exports = Vec::new();
+        let mut custom_sections = Vec::new();
         let mut func_starts = HashMap::new();
         let mut func_code = HashMap::new();
         let mut func_names = HashMap::new();
@@ -77,13 +79,17 @@ impl WasmModule {
                     }
                 }
 
-                ast::Section::Custom((_size, section)) => match &*section.lock().unwrap() {
+                ast::Section::Custom((_size, section)) => {
+                    custom_sections.push(section.lock().unwrap().clone());
+
+                    match &*section.lock().unwrap() {
                     ast::CustomSection::Name(names) => {
                         if let Some(v) = &names.func_names {
                             func_names = v.lock().unwrap().clone();
                         }
                     }
                     _ => {}
+                }
                 },
                 _ => {}
             }
@@ -97,10 +103,15 @@ impl WasmModule {
             func_locals,
             func_starts,
             func_code,
+            custom_sections,
             func_names: Mutex::new(func_names),
             types: Mutex::new(types),
             func_to_typeidx: Mutex::new(func_to_typeidx),
         }
+    }
+
+    pub fn into_inner(self) -> ast::Module {
+        Arc::into_inner(self.inner).unwrap()
     }
 
     pub fn add_func_name(&self, funcidx: u32, name: &str) {
@@ -352,6 +363,44 @@ impl WasmModule {
         }
 
         None
+    }
+
+    pub fn get_custom_sections(&self) -> &Vec<ast::CustomSection> {
+        &self.custom_sections
+    }
+
+    pub fn remove_custom_section(&self, name: &str) -> Option<()> {
+        let mut idx = None;
+        let mut i = 0;
+
+        for section in self.inner.sections.lock().unwrap().iter() {
+            match &section.value {
+                ast::Section::Custom((_size, section)) => match &*section.lock().unwrap() {
+                    ast::CustomSection::Unknown(section_name, _) => {
+                        if section_name == name {
+                            idx = Some(i)
+                        }
+                    }
+
+                    ast::CustomSection::Name(_) if name == "name" => {
+                            idx = Some(i)
+                    }
+                    _ => {}
+                },
+                _ => {}
+            }
+
+            i+=1;
+        }
+
+        if let Some(idx) = idx {
+            let mut sections = self.inner.sections.lock().unwrap();
+            sections.remove(idx);
+
+            Some(())
+        } else {
+            None
+        }
     }
 
     pub fn get_func_name(&self, funcidx: u32) -> Option<String> {
