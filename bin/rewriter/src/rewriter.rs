@@ -318,10 +318,8 @@ impl Visitor for CoredumpTransform {
                 let start_frame = Arc::new(Mutex::new(ast::Value::new(self.start_frame)));
                 ctx.insert_node_before(ast::Instr::call(start_frame)); // value count
 
-                // TODO: for now we don't care about function arguments
-                // because seems that Rust doesn't really use them anyway.
                 for i in 0..param_count {
-                    ctx.insert_node_before(ast::Instr::i32_const(669 + i as i64));
+                    ctx.insert_node_before(ast::Instr::local_get(i as u32));
 
                     let add_i32_local = Arc::new(Mutex::new(ast::Value::new(self.add_i32_local)));
                     ctx.insert_node_before(ast::Instr::call(add_i32_local));
@@ -467,10 +465,8 @@ impl Visitor for CoredumpTransform {
                                 Arc::new(Mutex::new(ast::Value::new(self.start_frame)));
                             body.push(ast::Value::new(ast::Instr::call(start_frame))); // value count
 
-                            // TODO: for now we don't care about function arguments
-                            // because seems that Rust doesn't really use them anyway.
                             for i in 0..param_count {
-                                body.push(ast::Value::new(ast::Instr::i32_const(669 + i as i64)));
+                                body.push(ast::Value::new(ast::Instr::local_get(i as u32)));
 
                                 let add_i32_local =
                                     Arc::new(Mutex::new(ast::Value::new(self.add_i32_local)));

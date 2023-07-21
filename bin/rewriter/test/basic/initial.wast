@@ -11,6 +11,6 @@
     (i32.add)
     (unreachable)
   )
-  (export "addTwo" (func $entry))
+  (export "entry" (func $entry))
   (export "memory" (memory 0))
 )

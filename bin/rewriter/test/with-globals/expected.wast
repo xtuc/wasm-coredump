@@ -46,9 +46,9 @@
     i32.const 1
     i32.const 2
     call $coredump/start_frame
-    i32.const 669
+    local.get 0
     call $coredump/add_i32_local
-    i32.const 670
+    local.get 1
     call $coredump/add_i32_local
     i32.const 666
     return)

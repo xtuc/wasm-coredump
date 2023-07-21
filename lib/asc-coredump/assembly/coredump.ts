@@ -31,6 +31,7 @@ function write_thread_info(ptr: u32): u32 {
   return wrote
 }
 
+// Start a new frame
 export function start_frame(funcidx: u32, local_count: u32): void {
   if (load<u32>(0) === 0x6d736100) {
     // Check for the presence of the wasm\0 header, meaning a coredump

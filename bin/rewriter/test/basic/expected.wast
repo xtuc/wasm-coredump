@@ -46,9 +46,9 @@
     i32.const 1
     i32.const 2
     call $coredump/start_frame
-    i32.const 669
+    local.get 0
     call $coredump/add_i32_local
-    i32.const 670
+    local.get 1
     call $coredump/add_i32_local
     i32.const 666
     return)
@@ -1356,5 +1356,5 @@
   (global (;1;) (mut i32) (i32.const 0))
   (global (;2;) (mut i32) (i32.const 0))
   (global (;3;) (mut i32) (i32.const 2147483647))
-  (export "addTwo" (func $entry))
+  (export "entry" (func $entry))
   (export "memory" (memory 0)))
