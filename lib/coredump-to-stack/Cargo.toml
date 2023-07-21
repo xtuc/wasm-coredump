@@ -1,6 +1,6 @@
 [package]
 name = "coredump-to-stack"
-version = "0.1.16"
+version = "0.1.17"
 edition = "2021"
 authors = ["Sven Sauleau <sven@sauleau.com>"]
 license = "MIT"
@@ -8,6 +8,6 @@ repository = "https://github.com/xtuc/wasm-coredump/tree/main/lib/coredump-to-st
 description = "Convert a Wasm coredump to a Stacktrace, resolving symbols."
 
 [dependencies]
-wasm-parser = { path = "../../lib/parser", version = "0.1.16" }
-wasm-printer = { path = "../../lib/printer", version = "0.1.16" }
-core-wasm-ast = { path = "../../lib/ast", version = "0.1.16" }
+wasm-parser = { path = "../../lib/parser", version = "0.1.17" }
+wasm-printer = { path = "../../lib/printer", version = "0.1.17" }
+core-wasm-ast = { path = "../../lib/ast", version = "0.1.17" }
