@@ -303,7 +303,12 @@ fn write_section_custom(
         ast::CustomSection::Name(content) => {
             write_utf8(buffer, "name");
             write_section_custom_name(buffer, &content)?
-        },
+        }
+
+        ast::CustomSection::BuildId(id) => {
+            write_utf8(buffer, "build_id");
+            write_section_custom_build_id(buffer, id)?
+        }
 
         ast::CustomSection::CoredumpCore(content) => {
             write_utf8(buffer, "core");
@@ -316,6 +321,12 @@ fn write_section_custom(
         }
     }
 
+    Ok(())
+}
+
+fn write_section_custom_build_id(buffer: &mut Vec<u8>, id: &[u8]) -> Result<(), BoxError> {
+    write_unsigned_leb128(buffer, id.len() as u64);
+    buffer.extend_from_slice(id);
     Ok(())
 }
 

@@ -415,6 +415,7 @@ pub enum CustomSection {
     Name(DebugNames),
     CoredumpCore(wasm_coredump_types::ProcessInfo),
     CoredumpCoreStack(wasm_coredump_types::CoreStack),
+    BuildId(Vec<u8>),
 }
 
 #[derive(Debug)]

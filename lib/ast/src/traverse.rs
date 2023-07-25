@@ -20,6 +20,7 @@ pub struct WasmModule {
     globals: Vec<ast::Global>,
     exports: Vec<ast::Export>,
     custom_sections: Vec<ast::CustomSection>,
+    build_id: Option<Vec<u8>>,
 }
 impl WasmModule {
     pub fn new(inner: Arc<ast::Module>) -> Self {
@@ -33,6 +34,7 @@ impl WasmModule {
         let mut func_starts = HashMap::new();
         let mut func_code = HashMap::new();
         let mut func_names = HashMap::new();
+        let mut build_id = None;
 
         let mut funcidx = 0;
 
@@ -83,14 +85,17 @@ impl WasmModule {
                     custom_sections.push(section.lock().unwrap().clone());
 
                     match &*section.lock().unwrap() {
-                    ast::CustomSection::Name(names) => {
-                        if let Some(v) = &names.func_names {
-                            func_names = v.lock().unwrap().clone();
+                        ast::CustomSection::Name(names) => {
+                            if let Some(v) = &names.func_names {
+                                func_names = v.lock().unwrap().clone();
+                            }
                         }
+                        ast::CustomSection::BuildId(id) => {
+                            build_id = Some(id.clone());
+                        }
+                        _ => {}
                     }
-                    _ => {}
                 }
-                },
                 _ => {}
             }
         }
@@ -104,6 +109,7 @@ impl WasmModule {
             func_starts,
             func_code,
             custom_sections,
+            build_id,
             func_names: Mutex::new(func_names),
             types: Mutex::new(types),
             func_to_typeidx: Mutex::new(func_to_typeidx),
@@ -382,15 +388,13 @@ impl WasmModule {
                         }
                     }
 
-                    ast::CustomSection::Name(_) if name == "name" => {
-                            idx = Some(i)
-                    }
+                    ast::CustomSection::Name(_) if name == "name" => idx = Some(i),
                     _ => {}
                 },
                 _ => {}
             }
 
-            i+=1;
+            i += 1;
         }
 
         if let Some(idx) = idx {
@@ -514,6 +518,20 @@ impl WasmModule {
         let mut sections = self.inner.sections.lock().unwrap();
         sections.push(ast::Value::new(s));
         sections.sort_by(|a, b| a.pos().cmp(&b.pos()));
+    }
+
+    pub fn add_custom_section(&self, s: ast::CustomSection) {
+        let section = ast::Section::Custom((ast::Value::new(0), Arc::new(Mutex::new(s))));
+        self.add_section(section);
+    }
+
+    pub fn get_build_id(&self) -> &Option<Vec<u8>> {
+        &self.build_id
+    }
+
+    pub fn set_build_id(&self, build_id: &[u8]) {
+        let section = ast::CustomSection::BuildId(build_id.to_owned());
+        self.add_custom_section(section);
     }
 }
 

@@ -148,6 +148,14 @@ pub fn parse_custom_section_name<'a>(input: &'a [u8]) -> Result<ast::DebugNames,
     }
 }
 
+pub fn parse_custom_section_build_id<'a>(input: &'a [u8]) -> Result<Vec<u8>, BoxError> {
+    let input = InputContext { input, offset: 0 };
+    match decode_section_custom_build_id(input) {
+        Ok((_, id)) => Ok(id),
+        Err(err) => Err(format!("failed to decode name section: {}", err).into()),
+    }
+}
+
 fn decode_module<'a>(ctx: InputContext<'a>) -> IResult<InputContext<'a>, ast::Module> {
     let (ctx, magic) = ctx.read_bytes(4)?;
     if magic != b"\0asm" {
@@ -226,6 +234,10 @@ fn decode_section_custom<'a>(
             let (ctx, content) = decode_section_custom_name(ctx)?;
             (ctx, ast::CustomSection::Name(content))
         }
+        "build_id" => {
+            let (ctx, content) = decode_section_custom_build_id(ctx)?;
+            (ctx, ast::CustomSection::BuildId(content))
+        }
         "core" => {
             let (ctx, content) = coredump::decode_process_info(ctx)?;
             (ctx, ast::CustomSection::CoredumpCore(content))
@@ -242,6 +254,12 @@ fn decode_section_custom<'a>(
             )
         }
     })
+}
+
+fn decode_section_custom_build_id<'a>(ctx: InputContext<'a>) -> IResult<InputContext<'a>, Vec<u8>> {
+    let (ctx, size) = ctx.read_leb128()?;
+    let (ctx, bytes) = ctx.read_bytes(size as usize)?;
+    Ok((ctx, bytes.to_owned()))
 }
 
 fn decode_section_custom_name<'a>(
