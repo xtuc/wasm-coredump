@@ -3,6 +3,7 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::sync::Arc;
 use std::sync::Mutex;
+use uuid::Uuid;
 
 type BoxError = Box<dyn std::error::Error>;
 
@@ -12,8 +13,6 @@ type BoxError = Box<dyn std::error::Error>;
 struct Args {
     /// Source WebAssembly module
     source: String,
-    /// Out file
-    out: String,
 }
 
 fn main() -> Result<(), BoxError> {
@@ -30,10 +29,9 @@ fn main() -> Result<(), BoxError> {
         .map_err(|err| format!("failed to parse Wasm module: {}", err))?;
     let wasm = core_wasm_ast::traverse::WasmModule::new(Arc::new(input));
 
-    let mut name_section = None;
-    // let debug_wasm = core_wasm_ast::traverse::WasmModule::new(Arc::new(core_wasm_ast::Module {
-    //     sections: Arc::new(Mutex::new(vec![])),
-    // }));
+    let debug_wasm = core_wasm_ast::traverse::WasmModule::new(Arc::new(core_wasm_ast::Module {
+        sections: Arc::new(Mutex::new(vec![])),
+    }));
 
     let mut custom_sections_to_remove = vec![];
 
@@ -43,11 +41,7 @@ fn main() -> Result<(), BoxError> {
                 custom_sections_to_remove.push(name.clone());
             }
             core_wasm_ast::CustomSection::Name(n) => {
-                name_section = Some(n.clone());
-                // debug_wasm.add_section(core_wasm_ast::Section::Custom((
-                //     core_wasm_ast::Value::new(0),
-                //     Arc::new(Mutex::new(section.clone())),
-                // )));
+                debug_wasm.add_custom_section(core_wasm_ast::CustomSection::Name(n.clone()));
 
                 custom_sections_to_remove.push("name".to_owned());
             }
@@ -60,6 +54,9 @@ fn main() -> Result<(), BoxError> {
         wasm.remove_custom_section(section);
     }
 
+    let build_id = Uuid::new_v4();
+    wasm.set_build_id(build_id.as_bytes());
+
     // FIXME add debug id to correlate debugging symbols with binary
 
     // override input with stripped down version
@@ -69,21 +66,16 @@ fn main() -> Result<(), BoxError> {
         file.write_all(&bytes)?;
     }
 
-
-    // write name section
+    // write debug wasm
     {
-        let mut bytes = vec![];
-        wasm_printer::wasm::write_section_custom_name(&mut bytes, &name_section.unwrap()).unwrap();
-        let mut file = File::create(&args.out)?;
-        file.write_all(&bytes)?;
-    }
+        let filename = format!("debug-{}.wasm", build_id);
+        let mut file = File::create(&filename)?;
 
-    // // create debug info only wasm module
-    // let debuginfo_bytes = wasm_printer::wasm::print(&debug_wasm.into_inner()).unwrap();
-    // {
-    //     let mut file = File::create(&args.out)?;
-    //     file.write_all(&debuginfo_bytes)?;
-    // }
+        let bytes = wasm_printer::wasm::print(&debug_wasm.into_inner()).unwrap();
+        file.write_all(&bytes)?;
+
+        println!("Wrote debugging infos {}", filename);
+    }
 
     Ok(())
 }

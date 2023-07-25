@@ -14,3 +14,4 @@ wasm-printer = { path = "../../lib/printer", version = "0.1.17" }
 wasm-parser = { path = "../../lib/parser", version = "0.1.17" }
 core-wasm-ast = { path = "../../lib/ast", version = "0.1.17" }
 clap = { version = "4.1.4", features = ["derive"] }
+uuid = { version = "1.4.1", features = ["v4"] }
