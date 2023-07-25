@@ -24,11 +24,11 @@ test: test-runtime test-rewriter
 publish:
 	cd ./lib/coredump-types && cargo publish
 	cd ./lib/coredump-encoder && cargo publish
+	cd ./lib/printer && cargo publish
+	cd ./lib/coredump-builder && cargo publish
 	cd ./lib/ast && cargo publish
 	cd ./lib/parser && cargo publish
-	cd ./lib/printer && cargo publish
 	cd ./bin/rewriter && cargo publish --allow-dirty
 	cd ./bin/wasmgdb && cargo publish
-	cd ./lib/coredump-builder && cargo publish
 	cd ./lib/coredump-to-stack && cargo publish
 	cd ./bin/debuginfo-split && cargo publish
