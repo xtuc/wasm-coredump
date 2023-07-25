@@ -318,15 +318,46 @@ impl Visitor for CoredumpTransform {
                 let start_frame = Arc::new(Mutex::new(ast::Value::new(self.start_frame)));
                 ctx.insert_node_before(ast::Instr::call(start_frame)); // value count
 
-                for i in 0..param_count {
-                    ctx.insert_node_before(ast::Instr::local_get(i as u32));
+                // Collect function params
+                // TODO; eventually share code with locals
+                {
+                    let mut i = 0;
+                    for param in &curr_func_type.params {
+                        ctx.insert_node_before(ast::Instr::local_get(i as u32));
 
-                    let add_i32_local = Arc::new(Mutex::new(ast::Value::new(self.add_i32_local)));
-                    ctx.insert_node_before(ast::Instr::call(add_i32_local));
+                        match param {
+                            ast::ValueType::NumType(ast::NumType::I64) => {
+                                let add_i64_local =
+                                    Arc::new(Mutex::new(ast::Value::new(self.add_i64_local)));
+                                ctx.insert_node_before(ast::Instr::call(add_i64_local));
+                            }
+
+                            ast::ValueType::NumType(ast::NumType::F64) => {
+                                let add_f64_local =
+                                    Arc::new(Mutex::new(ast::Value::new(self.add_f64_local)));
+                                ctx.insert_node_before(ast::Instr::call(add_f64_local));
+                            }
+
+                            ast::ValueType::NumType(ast::NumType::F32) => {
+                                let add_f32_local =
+                                    Arc::new(Mutex::new(ast::Value::new(self.add_f32_local)));
+                                ctx.insert_node_before(ast::Instr::call(add_f32_local));
+                            }
+
+                            ast::ValueType::NumType(ast::NumType::I32) => {
+                                let add_i32_local =
+                                    Arc::new(Mutex::new(ast::Value::new(self.add_i32_local)));
+                                ctx.insert_node_before(ast::Instr::call(add_i32_local));
+                            }
+                        }
+
+                        i += 1;
+                    }
                 }
 
-                // Collect the base/stack pointer, usually Rust stores it in
-                // the first few locals (so after the function params).
+                // Collect locals (so after the function params)
+                // Usually Rust stores base/stack pointers the first few locals.
+                // TODO; eventually share code with params
                 let mut local_count = curr_func_type.params.len() as u32;
 
                 for local in locals {
@@ -465,12 +496,53 @@ impl Visitor for CoredumpTransform {
                                 Arc::new(Mutex::new(ast::Value::new(self.start_frame)));
                             body.push(ast::Value::new(ast::Instr::call(start_frame))); // value count
 
-                            for i in 0..param_count {
-                                body.push(ast::Value::new(ast::Instr::local_get(i as u32)));
+                            // Collect function params
+                            // TODO; eventually share code with locals
+                            {
+                                let mut i = 0;
+                                for param in &curr_func_type.params {
+                                    body.push(ast::Value::new(ast::Instr::local_get(i as u32)));
 
-                                let add_i32_local =
-                                    Arc::new(Mutex::new(ast::Value::new(self.add_i32_local)));
-                                body.push(ast::Value::new(ast::Instr::call(add_i32_local)));
+                                    match param {
+                                        ast::ValueType::NumType(ast::NumType::I64) => {
+                                            let add_i64_local = Arc::new(Mutex::new(
+                                                ast::Value::new(self.add_i64_local),
+                                            ));
+                                            body.push(ast::Value::new(ast::Instr::call(
+                                                add_i64_local,
+                                            )));
+                                        }
+
+                                        ast::ValueType::NumType(ast::NumType::F64) => {
+                                            let add_f64_local = Arc::new(Mutex::new(
+                                                ast::Value::new(self.add_f64_local),
+                                            ));
+                                            body.push(ast::Value::new(ast::Instr::call(
+                                                add_f64_local,
+                                            )));
+                                        }
+
+                                        ast::ValueType::NumType(ast::NumType::F32) => {
+                                            let add_f32_local = Arc::new(Mutex::new(
+                                                ast::Value::new(self.add_f32_local),
+                                            ));
+                                            body.push(ast::Value::new(ast::Instr::call(
+                                                add_f32_local,
+                                            )));
+                                        }
+
+                                        ast::ValueType::NumType(ast::NumType::I32) => {
+                                            let add_i32_local = Arc::new(Mutex::new(
+                                                ast::Value::new(self.add_i32_local),
+                                            ));
+                                            body.push(ast::Value::new(ast::Instr::call(
+                                                add_i32_local,
+                                            )));
+                                        }
+                                    }
+
+                                    i += 1;
+                                }
                             }
 
                             // Collect the base/stack pointer, usually Rust stores it in
