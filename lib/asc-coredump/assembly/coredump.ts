@@ -32,7 +32,7 @@ function write_thread_info(ptr: u32): u32 {
 }
 
 // Start a new frame
-export function start_frame(funcidx: u32, local_count: u32): void {
+export function start_frame(codeoffset: u32, funcidx: u32, local_count: u32): void {
   if (load<u32>(0) === 0x6d736100) {
     // Check for the presence of the wasm\0 header, meaning a coredump
     // would already have been written.
@@ -44,7 +44,7 @@ export function start_frame(funcidx: u32, local_count: u32): void {
   // Create frame struct
   ptr += write_u8(ptr, 0) // frame version 0
   ptr += wasm.write_leb128_u32(ptr, funcidx)
-  ptr += wasm.write_leb128_u32(ptr, 0) // codeoffset
+  ptr += wasm.write_leb128_u32(ptr, codeoffset)
   ptr += wasm.write_leb128_u32(ptr, local_count)
   ptr += wasm.write_leb128_u32(ptr, 0) // stack count
 

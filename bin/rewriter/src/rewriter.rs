@@ -307,11 +307,9 @@ impl Visitor for CoredumpTransform {
                 // In Wasm DWARF the offset is relative to the start of the
                 // code section.
                 // https://yurydelendik.github.io/webassembly-dwarf/#pc
-                // let code_offset = ctx.node.start_offset as i64
-                //     - ctx.module.get_code_section_start_offset().unwrap() as i64;
-                // body.push(ast::Value::new(ast::Instr::i32_const(code_offset as i64)));
-                // FIXME: we use the funcidx because the code offset isn't accurate
-                // or buggy.
+                let code_offset = ctx.node.start_offset as i64
+                    - ctx.module.get_code_section_start_offset().unwrap() as i64;
+                ctx.insert_node_before(ast::Instr::i32_const(code_offset as i64));
                 ctx.insert_node_before(ast::Instr::i32_const(curr_funcidx as i64));
                 ctx.insert_node_before(ast::Instr::i32_const((locals.len() + param_count) as i64)); // value count
 
@@ -482,11 +480,9 @@ impl Visitor for CoredumpTransform {
                             // In Wasm DWARF the offset is relative to the start of the
                             // code section.
                             // https://yurydelendik.github.io/webassembly-dwarf/#pc
-                            // let code_offset = ctx.node.start_offset as i64
-                            //     - ctx.module.get_code_section_start_offset().unwrap() as i64;
-                            // body.push(ast::Value::new(ast::Instr::i32_const(code_offset as i64)));
-                            // FIXME: we use the funcidx because the code offset isn't accurate
-                            // or buggy.
+                            let code_offset = ctx.node.start_offset as i64
+                                - ctx.module.get_code_section_start_offset().unwrap() as i64;
+                            body.push(ast::Value::new(ast::Instr::i32_const(code_offset as i64)));
                             body.push(ast::Value::new(ast::Instr::i32_const(curr_funcidx as i64)));
                             body.push(ast::Value::new(ast::Instr::i32_const(
                                 (locals.len() + param_count) as i64,
@@ -640,11 +636,9 @@ impl Visitor for CoredumpTransform {
                     // In Wasm DWARF the offset is relative to the start of the
                     // code section.
                     // https://yurydelendik.github.io/webassembly-dwarf/#pc
-                    // let code_offset = ctx.node.start_offset as i64
-                    //     - ctx.module.get_code_section_start_offset().unwrap() as i64;
-                    // body.push(ast::Value::new(ast::Instr::i32_const(code_offset as i64)));
-                    // FIXME: we use the funcidx because the code offset isn't accurate
-                    // or buggy.
+                    let code_offset = ctx.node.start_offset as i64
+                        - ctx.module.get_code_section_start_offset().unwrap() as i64;
+                    body.push(ast::Value::new(ast::Instr::i32_const(code_offset as i64)));
                     body.push(ast::Value::new(ast::Instr::i32_const(curr_funcidx as i64)));
                     body.push(ast::Value::new(ast::Instr::i32_const(
                         (locals.len() + param_count) as i64,
