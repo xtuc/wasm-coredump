@@ -13,8 +13,8 @@ pub struct WasmModule {
     /// Mapping between funcidx and count of func locals
     func_locals: HashMap<u32, Vec<ast::CodeLocal>>,
     func_to_typeidx: Mutex<Vec<u32>>,
-    func_starts: HashMap<u32, usize>,
     func_code: HashMap<u32, ast::Code>,
+    pub func_starts: HashMap<u32, usize>,
     pub func_names: Mutex<HashMap<u32, String>>,
     imports: Vec<ast::Import>,
     globals: Vec<ast::Global>,
@@ -733,7 +733,6 @@ pub fn traverse(module: Arc<ast::Module>, visitor: Arc<dyn Visitor + Send + Sync
         }
     }
 
-    // TODO: add barrier
     pool.join();
 }
 

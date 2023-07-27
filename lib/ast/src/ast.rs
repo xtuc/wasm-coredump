@@ -370,7 +370,7 @@ pub enum Instr {
 
 pub type Expr = Value<Vec<Value<Instr>>>;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Section {
     /// (Size, Section)
     Memory((Value<u32>, Vec<Memory>)),

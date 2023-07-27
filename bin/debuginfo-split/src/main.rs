@@ -18,26 +18,47 @@ struct Args {
 fn main() -> Result<(), BoxError> {
     let args = Args::parse();
 
-    let mut input = Vec::new();
+    let mut input_bytes = Vec::new();
     {
         let mut file = File::open(&args.source).expect("File not found");
-        file.read_to_end(&mut input)
+        file.read_to_end(&mut input_bytes)
             .expect("Error while reading file");
     }
 
-    let input = wasm_parser::parse(&input)
+    let input = wasm_parser::parse(&input_bytes)
         .map_err(|err| format!("failed to parse Wasm module: {}", err))?;
-    let wasm = core_wasm_ast::traverse::WasmModule::new(Arc::new(input));
 
     let debug_wasm = core_wasm_ast::traverse::WasmModule::new(Arc::new(core_wasm_ast::Module {
         sections: Arc::new(Mutex::new(vec![])),
     }));
 
+    for section in input.sections.lock().unwrap().iter() {
+        match &section.value {
+            core_wasm_ast::Section::Type((_, _))
+            | core_wasm_ast::Section::Func((_, _))
+            | core_wasm_ast::Section::Import((_, _))
+            | core_wasm_ast::Section::Memory((_, _))
+            | core_wasm_ast::Section::Table((_, _))
+            | core_wasm_ast::Section::Global((_, _)) => {
+                debug_wasm.add_section(section.value.clone());
+            }
+
+            _ => {
+                // ignore Data, Code, Export, Element, Custom sections
+            }
+        }
+    }
+
+    let wasm = core_wasm_ast::traverse::WasmModule::new(Arc::new(input));
     let mut custom_sections_to_remove = vec![];
 
-    for section in wasm.get_custom_sections() {
-        match section {
-            core_wasm_ast::CustomSection::Unknown(name, _) => {
+    for custom_section in wasm.get_custom_sections() {
+        match custom_section {
+            core_wasm_ast::CustomSection::Unknown(name, s) => {
+                debug_wasm.add_custom_section(core_wasm_ast::CustomSection::Unknown(
+                    name.clone(),
+                    s.clone(),
+                ));
                 custom_sections_to_remove.push(name.clone());
             }
             core_wasm_ast::CustomSection::Name(n) => {
@@ -45,6 +66,7 @@ fn main() -> Result<(), BoxError> {
 
                 custom_sections_to_remove.push("name".to_owned());
             }
+
             _ => {}
         }
     }
