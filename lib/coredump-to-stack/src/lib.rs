@@ -1,10 +1,29 @@
+use rustc_demangle::demangle;
 use std::collections::HashMap;
 use std::sync::Arc;
+use wasmgdb_ddbug_parser as ddbug_parser;
 
 type BoxError = Box<dyn std::error::Error>;
 
+#[derive(Debug)]
 pub struct Frame {
     pub name: String,
+    pub location: FrameLocation,
+}
+
+#[derive(Debug)]
+pub struct FrameLocation {
+    pub file: String,
+    pub line: u32,
+}
+
+impl FrameLocation {
+    fn unknown() -> Self {
+        Self {
+            file: "unknown.rs".to_owned(),
+            line: 0,
+        }
+    }
 }
 
 pub struct CoredumpToStack {
@@ -12,6 +31,9 @@ pub struct CoredumpToStack {
 
     /// Function names from the name custom section
     func_names: Option<HashMap<u32, String>>,
+
+    /// Wasm module containing debugging information, not necessarily valid Wasm.
+    debug_module: Option<Vec<u8>>,
 }
 
 impl CoredumpToStack {
@@ -22,6 +44,7 @@ impl CoredumpToStack {
         Ok(Self {
             coredump,
             func_names: None,
+            debug_module: None,
         })
     }
 
@@ -35,6 +58,7 @@ impl CoredumpToStack {
         Ok(Self {
             coredump: self.coredump,
             func_names: Some(func_names.clone()),
+            debug_module: None,
         })
     }
 
@@ -48,6 +72,7 @@ impl CoredumpToStack {
         Ok(Self {
             coredump: self.coredump,
             func_names: Some(func_names.clone()),
+            debug_module: Some(bytes.to_owned()),
         })
     }
 
@@ -61,10 +86,79 @@ impl CoredumpToStack {
 
         let mut frames = vec![];
 
+        let arena = ddbug_parser::Arena::new();
+        #[allow(unused_assignments)]
+        // file is used in the functions_by_linkage_name condition, we just
+        // moved file here to increase its lifetime.
+        let mut file = None;
+
+        let functions_by_linkage_name = if let Some(debug_module) = &self.debug_module {
+            let object = object::read::File::parse(debug_module.as_slice()).unwrap();
+            file = Some(
+                ddbug_parser::File::parse_object(
+                    &object,
+                    &object,
+                    "module.wasm".to_owned(),
+                    &arena,
+                )
+                .unwrap(),
+            );
+            let mut ddbug = ddbug_parser::FileHash::new(&file.as_ref().unwrap());
+
+            let mut new = HashMap::new();
+
+            // For Rust, demangle names in case the name section contains the names
+            // unmangled.
+            for (k, v) in ddbug.functions_by_linkage_name.iter() {
+                new.insert(demangle(&k).to_string(), v.clone());
+            }
+
+            ddbug.functions_by_linkage_name.extend(new);
+            Some(ddbug.functions_by_linkage_name)
+        } else {
+            // Without the Wasm module with debugging information we have little
+            // information about the functions, only their linkage name.
+            None
+        };
+
         for frame in &coredump.stacks[0].frames {
-            frames.push(Frame {
-                name: func_names.get(&frame.funcidx).unwrap().to_owned(),
-            })
+            let linkage_name = func_names.get(&frame.funcidx).unwrap().to_owned();
+
+            if let Some(functions_by_linkage_name) = &functions_by_linkage_name {
+                if let Some(function) = functions_by_linkage_name.get(&linkage_name) {
+                    let mut name = "".to_owned();
+
+                    if let Some(ns) = function.namespace() {
+                        name += &format!("{}::", ns.name().unwrap());
+                    }
+                    name += function.name().unwrap_or(&linkage_name);
+
+                    let file = format!(
+                        "{}/{}",
+                        function.source().directory().unwrap_or(""),
+                        function.source().file().unwrap_or("unknown.rs")
+                    );
+
+                    let location = FrameLocation {
+                        file,
+                        line: function.source().line(),
+                    };
+
+                    frames.push(Frame { name, location })
+                } else {
+                    let location = FrameLocation::unknown();
+                    frames.push(Frame {
+                        name: linkage_name,
+                        location,
+                    })
+                }
+            } else {
+                let location = FrameLocation::unknown();
+                frames.push(Frame {
+                    name: linkage_name,
+                    location,
+                })
+            }
         }
 
         Ok(frames)
