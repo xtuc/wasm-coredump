@@ -1,4 +1,6 @@
 use clap::Parser;
+use rustc_demangle::demangle;
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::prelude::*;
 use std::sync::Arc;
@@ -44,7 +46,16 @@ pub fn main() -> Result<(), BoxError> {
     };
 
     let ctx = ddbug_parser::File::parse(source_filename.clone()).unwrap();
-    let ddbug = ddbug_parser::FileHash::new(ctx.file());
+    let mut ddbug = ddbug_parser::FileHash::new(ctx.file());
+    let mut new = HashMap::new();
+
+    // For Rust, demangle names in case the name section contains the names
+    // unmangled.
+    for (k, v) in ddbug.functions_by_linkage_name.iter() {
+        new.insert(demangle(&k).to_string(), v.clone());
+    }
+
+    ddbug.functions_by_linkage_name.extend(new);
 
     let mut source = Vec::new();
     {

@@ -24,3 +24,4 @@ wasm-coredump-types = { path = "../../lib/coredump-types", version = "0.1.19" }
 clap = { version = "4.1.4", features = ["derive"] }
 wasmtime = "5.0.0"
 wasmtime-wasi = "5.0.0"
+rustc-demangle = "0.1.23"
