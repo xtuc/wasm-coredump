@@ -20,7 +20,7 @@
     call $addTwo
     global.get 2
     if  ;; label = @1
-      i32.const 17
+      i32.const 8
       i32.const 0
       i32.const 2
       call $coredump/start_frame
@@ -44,7 +44,7 @@
     local.get 1
     i32.add
     call $coredump/unreachable_shim
-    i32.const 27
+    i32.const 18
     i32.const 1
     i32.const 2
     call $coredump/start_frame

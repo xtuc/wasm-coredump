@@ -13,6 +13,13 @@ type BoxError = Box<dyn std::error::Error>;
 
 #[derive(Debug)]
 pub(crate) struct ParserError(String);
+pub const CONTINUATION_BIT: u8 = 1 << 7;
+pub const SIGN_BIT: u8 = 1 << 6;
+
+#[inline]
+pub fn low_bits_of_byte(byte: u8) -> u8 {
+    byte & !CONTINUATION_BIT
+}
 
 impl<I> nom::error::ParseError<I> for ParserError {
     fn from_error_kind(_input: I, kind: nom::error::ErrorKind) -> Self {
@@ -63,23 +70,33 @@ impl<'a> InputContext<'a> {
     }
 
     fn read_leb128(self) -> IResult<InputContext<'a>, u32> {
-        let mut input = self.input;
-        let v = leb128::read::unsigned(&mut input).unwrap();
+        let mut result = 0;
+        let mut shift = 0;
 
-        // FIXME: find a better way to known how many bytes we just read
-        let size = {
-            let mut buffer = Vec::new();
-            leb128::write::unsigned(&mut buffer, v).unwrap();
-            buffer.len()
-        };
+        let mut ctx = self;
+        loop {
+            let ret = ctx.read_u8()?;
+            ctx = ret.0;
+            let mut buf = ret.1;
 
-        Ok((
-            Self {
-                input,
-                offset: self.offset + size,
-            },
-            v as u32,
-        ))
+            if shift == 63 && buf != 0x00 && buf != 0x01 {
+                while buf & CONTINUATION_BIT != 0 {
+                    let ret = ctx.read_u8()?;
+                    ctx = ret.0;
+                    buf = ret.1;
+                }
+                panic!("overflow");
+            }
+
+            let low_bits = low_bits_of_byte(buf) as u64;
+            result |= low_bits << shift;
+
+            if buf & CONTINUATION_BIT == 0 {
+                return Ok((ctx, result as u32));
+            }
+
+            shift += 7;
+        }
     }
 
     fn read_f32(self) -> IResult<InputContext<'a>, f32> {
@@ -95,23 +112,42 @@ impl<'a> InputContext<'a> {
     }
 
     fn read_leb128_signed(self) -> IResult<InputContext<'a>, i64> {
-        let mut input = self.input;
-        let v = leb128::read::signed(&mut input).unwrap();
+        let mut result = 0;
+        let mut shift = 0;
+        let size = 64;
+        let mut byte;
 
-        // FIXME: find a better way to known how many bytes we just read
-        let size = {
-            let mut buffer = Vec::new();
-            leb128::write::signed(&mut buffer, v).unwrap();
-            buffer.len()
-        };
+        let mut ctx = self;
+        loop {
+            let ret = ctx.read_u8()?;
+            ctx = ret.0;
+            let mut buf = ret.1;
 
-        Ok((
-            Self {
-                input,
-                offset: self.offset + size,
-            },
-            v,
-        ))
+            byte = buf;
+            if shift == 63 && byte != 0x00 && byte != 0x7f {
+                while buf & CONTINUATION_BIT != 0 {
+                    let ret = ctx.read_u8()?;
+                    ctx = ret.0;
+                    buf = ret.1;
+                }
+                panic!("overflow");
+            }
+
+            let low_bits = low_bits_of_byte(byte) as i64;
+            result |= low_bits << shift;
+            shift += 7;
+
+            if byte & CONTINUATION_BIT == 0 {
+                break;
+            }
+        }
+
+        if shift < size && (SIGN_BIT & byte) == SIGN_BIT {
+            // Sign extend the result.
+            result |= !0 << shift;
+        }
+
+        Ok((ctx, result as i64))
     }
 
     fn read_bytes(self, n: usize) -> IResult<InputContext<'a>, &'a [u8]> {
@@ -445,27 +481,33 @@ pub(crate) fn decode_name<'a>(ctx: InputContext<'a>) -> IResult<InputContext<'a>
 fn decode_code<'a>(ctx: InputContext<'a>) -> IResult<InputContext<'a>, ast::Code> {
     let start_offset = ctx.offset;
     let (ctx, size) = ctx.read_leb128()?;
-    let end_offset = ctx.offset;
 
+    let code_size_node = ast::Value {
+        start_offset,
+        value: size,
+        end_offset: ctx.offset,
+    };
+
+    // let code_start_offset = ctx.offset;
+    let code_start_offset = start_offset;
     let (ctx, code_bytes) = ctx.read_bytes(size as usize)?;
 
     let code = {
         let ctx = InputContext {
             input: code_bytes,
-            offset: ctx.offset,
+            offset: code_start_offset,
         };
 
-        let size = ast::Value {
-            start_offset,
-            value: size,
-            end_offset,
-        };
         let (ctx, locals) = decode_vec(ctx, decode_code_local)?;
         let (_ctx, body) = decode_expr(ctx, ast::Instr::end)?;
         let body = Arc::new(Mutex::new(body));
 
         // Bytes are split before, no need to propagate this context.
-        ast::Code { size, locals, body }
+        ast::Code {
+            size: code_size_node,
+            locals,
+            body,
+        }
     };
 
     Ok((ctx, code))
@@ -964,7 +1006,7 @@ fn decode_valtype<'a>(ctx: InputContext<'a>) -> IResult<InputContext<'a>, ast::V
 fn decode_type<'a>(ctx: InputContext<'a>) -> IResult<InputContext<'a>, ast::Type> {
     let (ctx, b) = ctx.read_u8()?;
     if b != 0x60 {
-        panic!("unexpected type");
+        panic!("unexpected type: {}", b);
     }
     let (ctx, params) = decode_vec(ctx, decode_valtype)?;
     let (ctx, results) = decode_vec(ctx, decode_valtype)?;
@@ -1097,23 +1139,26 @@ fn decode_memory<'a>(ctx: InputContext<'a>) -> IResult<InputContext<'a>, ast::Me
 fn decode_section<'a>(ctx: InputContext<'a>) -> IResult<InputContext<'a>, ast::Section> {
     let (ctx, id) = ctx.read_u8()?;
 
-    let start_offset = ctx.offset;
+    let size_start_offset = ctx.offset;
     let (ctx, size) = ctx.read_leb128()?;
-    let end_offset = ctx.offset;
+    let size_end_offset = ctx.offset;
 
     let section_size = ast::Value {
-        start_offset,
+        start_offset: size_start_offset,
         value: size,
-        end_offset,
+        end_offset: size_end_offset,
     };
 
-    let offset = ctx.offset;
-    debug!("decoding section {} ({} byte(s)) @ {}", id, size, offset);
+    let section_start_offset = ctx.offset;
+    debug!(
+        "decoding section {} ({} byte(s)) @ {}",
+        id, size, section_start_offset
+    );
     let (ctx, section_bytes) = ctx.read_bytes(size as usize)?;
 
     let section_bytes = InputContext {
         input: section_bytes,
-        offset,
+        offset: section_start_offset,
     };
 
     let section = match id {
@@ -1161,7 +1206,7 @@ fn decode_section<'a>(ctx: InputContext<'a>) -> IResult<InputContext<'a>, ast::S
             let end_offset = ctx.offset;
 
             let value = ast::Value {
-                start_offset,
+                start_offset: section_start_offset,
                 value: res,
                 end_offset,
             };

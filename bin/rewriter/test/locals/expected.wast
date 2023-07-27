@@ -17,7 +17,7 @@
       global.set 3
     end
     call $coredump/unreachable_shim
-    i32.const 24
+    i32.const 12
     i32.const 0
     i32.const 8
     call $coredump/start_frame

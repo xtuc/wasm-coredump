@@ -84,7 +84,7 @@
     i32.gt_u
     if  ;; label = @1
       call $coredump/unreachable_shim
-      i32.const 59
+      i32.const 49
       i32.const 3
       i32.const 0
       call $coredump/start_frame
@@ -97,7 +97,7 @@
     call $invalid_nested
     global.get 2
     if  ;; label = @1
-      i32.const 59
+      i32.const 54
       i32.const 4
       i32.const 0
       call $coredump/start_frame
@@ -123,7 +123,7 @@
     call $invalid_nested1
     global.get 2
     if  ;; label = @1
-      i32.const 65
+      i32.const 59
       i32.const 5
       i32.const 0
       call $coredump/start_frame
