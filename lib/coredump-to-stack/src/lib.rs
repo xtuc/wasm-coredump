@@ -84,7 +84,7 @@ impl CoredumpToStack {
             .ok_or::<BoxError>("missing name section".into())?;
         let coredump = coredump_wasm.get_coredump()?;
 
-        let mut frames = vec![];
+        let mut out_frames = vec![];
 
         let arena = ddbug_parser::Arena::new();
         #[allow(unused_assignments)]
@@ -121,8 +121,14 @@ impl CoredumpToStack {
             None
         };
 
-        for frame in &coredump.stacks[0].frames {
-            let linkage_name = func_names.get(&frame.funcidx).unwrap().to_owned();
+        let mut frames = coredump.stacks[0].frames.clone();
+        frames.reverse();
+
+        for frame in frames {
+            let linkage_name = func_names
+                .get(&frame.funcidx)
+                .unwrap_or(&format!("<unknown-func{}>", frame.funcidx))
+                .to_owned();
 
             if let Some(functions_by_linkage_name) = &functions_by_linkage_name {
                 if let Some(function) = functions_by_linkage_name.get(&linkage_name) {
@@ -144,23 +150,23 @@ impl CoredumpToStack {
                         line: function.source().line(),
                     };
 
-                    frames.push(Frame { name, location })
+                    out_frames.push(Frame { name, location })
                 } else {
                     let location = FrameLocation::unknown();
-                    frames.push(Frame {
+                    out_frames.push(Frame {
                         name: linkage_name,
                         location,
                     })
                 }
             } else {
                 let location = FrameLocation::unknown();
-                frames.push(Frame {
+                out_frames.push(Frame {
                     name: linkage_name,
                     location,
                 })
             }
         }
 
-        Ok(frames)
+        Ok(out_frames)
     }
 }
