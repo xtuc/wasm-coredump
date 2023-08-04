@@ -1,6 +1,6 @@
 [package]
 name = "wasm-coredump-builder"
-version = "0.1.20"
+version = "0.1.21"
 edition = "2021"
 authors = ["Sven Sauleau <sven@sauleau.com>"]
 license = "MIT"
@@ -8,9 +8,9 @@ keywords = ["wasm", "rust", "coredump", "api"]
 description = "Wasm coredump builder API for Rust"
 
 [dependencies]
-wasm-coredump-types = { path = "../coredump-types", version = "0.1.20" }
-wasm-coredump-encoder = { path = "../coredump-encoder", version = "0.1.20" }
+wasm-coredump-types = { path = "../coredump-types", version = "0.1.21" }
+wasm-coredump-encoder = { path = "../coredump-encoder", version = "0.1.21" }
 wasm-encoder = "0.23.0"
 
 [dev-dependencies]
-wasm-printer = { path = "../printer", version = "0.1.20" }
+wasm-printer = { path = "../printer", version = "0.1.21" }

@@ -313,7 +313,7 @@ dependencies = [
 
 [[package]]
 name = "core-wasm-ast"
-version = "0.1.20"
+version = "0.1.21"
 dependencies = [
  "log",
  "num_cpus",
@@ -323,7 +323,7 @@ dependencies = [
 
 [[package]]
 name = "coredump-dump"
-version = "0.1.20"
+version = "0.1.21"
 dependencies = [
  "core-wasm-ast",
  "wasm-parser",
@@ -332,7 +332,7 @@ dependencies = [
 
 [[package]]
 name = "coredump-to-stack"
-version = "0.1.20"
+version = "0.1.21"
 dependencies = [
  "core-wasm-ast",
  "object",
@@ -523,7 +523,7 @@ dependencies = [
 
 [[package]]
 name = "debuginfo-split"
-version = "0.1.20"
+version = "0.1.21"
 dependencies = [
  "clap",
  "core-wasm-ast",
@@ -1608,7 +1608,7 @@ dependencies = [
 
 [[package]]
 name = "wasm-coredump-builder"
-version = "0.1.20"
+version = "0.1.21"
 dependencies = [
  "wasm-coredump-encoder",
  "wasm-coredump-types",
@@ -1618,7 +1618,7 @@ dependencies = [
 
 [[package]]
 name = "wasm-coredump-encoder"
-version = "0.1.20"
+version = "0.1.21"
 dependencies = [
  "leb128",
  "wasm-coredump-types",
@@ -1626,7 +1626,7 @@ dependencies = [
 
 [[package]]
 name = "wasm-coredump-rewriter"
-version = "0.1.20"
+version = "0.1.21"
 dependencies = [
  "clap",
  "core-wasm-ast",
@@ -1638,7 +1638,7 @@ dependencies = [
 
 [[package]]
 name = "wasm-coredump-types"
-version = "0.1.20"
+version = "0.1.21"
 
 [[package]]
 name = "wasm-encoder"
@@ -1660,7 +1660,7 @@ dependencies = [
 
 [[package]]
 name = "wasm-parser"
-version = "0.1.20"
+version = "0.1.21"
 dependencies = [
  "core-wasm-ast",
  "env_logger 0.9.3",
@@ -1675,7 +1675,7 @@ dependencies = [
 
 [[package]]
 name = "wasm-printer"
-version = "0.1.20"
+version = "0.1.21"
 dependencies = [
  "byteorder",
  "colored",
@@ -1688,7 +1688,7 @@ dependencies = [
 
 [[package]]
 name = "wasmgdb"
-version = "0.1.20"
+version = "0.1.21"
 dependencies = [
  "clap",
  "colored",
@@ -1710,9 +1710,9 @@ dependencies = [
 
 [[package]]
 name = "wasmgdb_ddbug_parser"
-version = "0.3.2"
+version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "06bc378bdeaf4024ac8b4a964d44c3c16493012374e562809510307fa00fb885"
+checksum = "04efb057a6be8eb1e297000cb4c90b8fab6379d210fe221455baa76d325af153"
 dependencies = [
  "fnv",
  "gimli",
