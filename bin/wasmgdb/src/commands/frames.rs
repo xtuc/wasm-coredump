@@ -1,6 +1,7 @@
 use crate::repl::Context;
 use crate::{memory, BoxError};
 use colored::Colorize;
+use log::debug;
 
 pub(crate) fn backtrace<'a>(
     ctx: &Context<'a>,
@@ -61,18 +62,21 @@ pub(crate) fn print_frame<'a>(
                     // TODO: not always 4 bytes, right?
                     let size_of = 4;
 
-                    let value = if let Ok(addr) = memory::get_param_addr(frame, &func, param) {
-                        match memory::read(&coredump.data, addr, size_of) {
+                    let value = match memory::get_param_addr(frame, &func, param) {
+                        Ok(abs_addr) => match memory::read(&coredump.data, abs_addr, size_of) {
                             Ok(bytes) => {
                                 format!("0x{}", hex::encode(&bytes))
                             }
                             Err(err) => {
                                 format!("<failed to load: {}>", err)
                             }
+                        },
+                        Err(err) => {
+                            debug!("failed to get_param_addr: {err}");
+                            "???".to_owned()
                         }
-                    } else {
-                        "???".to_owned()
                     };
+
                     format!("{}={}", param_name.green(), value)
                 })
                 .collect::<Vec<String>>()
