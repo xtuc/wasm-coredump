@@ -8,14 +8,19 @@ type BoxError = Box<dyn std::error::Error + Sync + Send>;
 pub fn print(module: &ast::Module) -> Result<Vec<u8>, BoxError> {
     let mut buffer = vec![];
 
-    buffer.write(b"\0asm")?;
-    buffer.write(&1u32.to_le_bytes())?;
+    write_header(&mut buffer)?;
 
     for section in module.sections.lock().unwrap().iter() {
         write_section(&mut buffer, &section.value)?;
     }
 
     Ok(buffer)
+}
+
+pub fn write_header(buffer: &mut Vec<u8>) -> Result<(), BoxError> {
+    buffer.write(b"\0asm")?;
+    buffer.write(&1u32.to_le_bytes())?;
+    Ok(())
 }
 
 macro_rules! write_section {
@@ -37,7 +42,7 @@ macro_rules! write_section {
     };
 }
 
-fn write_section(buffer: &mut Vec<u8>, section: &ast::Section) -> Result<(), BoxError> {
+pub fn write_section(buffer: &mut Vec<u8>, section: &ast::Section) -> Result<(), BoxError> {
     match section {
         ast::Section::Import((_size, content)) => {
             write_section!(buffer, content.lock().unwrap(), 2, write_section_import);

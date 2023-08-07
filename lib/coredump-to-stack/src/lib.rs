@@ -1,6 +1,7 @@
 use rustc_demangle::demangle;
 use std::collections::HashMap;
 use std::sync::Arc;
+use std::sync::Mutex;
 use wasmgdb_ddbug_parser as ddbug_parser;
 
 type BoxError = Box<dyn std::error::Error>;
@@ -48,17 +49,53 @@ impl CoredumpToStack {
         })
     }
 
-    pub fn with_name_section(self, bytes: &[u8]) -> Result<Self, BoxError> {
-        let name_section = wasm_parser::parse_custom_section_name(bytes)?;
+    pub fn with_debug_sections(
+        self,
+        sections: HashMap<&'static str, Vec<u8>>,
+    ) -> Result<Self, BoxError> {
+        let mut debug_module = vec![];
+        wasm_printer::wasm::write_header(&mut debug_module)
+            .map_err(|err| format!("failed to write header: {err}"))?;
+
+        let name_section_bytes = sections
+            .get("name")
+            .ok_or::<BoxError>("missing function names in name section".into())?;
+        let name_section = wasm_parser::parse_custom_section_name(name_section_bytes)?;
         let func_names = name_section
             .func_names
             .ok_or::<BoxError>("missing function names in name section".into())?;
         let func_names = func_names.lock().unwrap();
 
+        for (k, v) in sections {
+            if k == "name" {
+                // We can't inject the name custon section in the debug_module
+                // because the object crate (used by gimli and ddbug) fails to
+                // decode the name section without the corresponding wasm function
+                // sections, which we don't want to bring in here.
+                //
+                // So ignore the name section here and we'll parse it ourselves
+                // later.
+                continue;
+            }
+
+            // Use a Unknown custom section to construct the debug_module because
+            // we can just provide arbrirary bytes, instead of an AST in some
+            // cases.
+            let custom_section = core_wasm_ast::CustomSection::Unknown(k.to_owned(), v);
+            // Size will be overriden when priting the module
+            let section_size = core_wasm_ast::Value::new(0);
+            let section = core_wasm_ast::Section::Custom((
+                section_size,
+                Arc::new(Mutex::new(custom_section)),
+            ));
+            wasm_printer::wasm::write_section(&mut debug_module, &section)
+                .map_err(|err| format!("failed to write custom section {k}: {err}"))?;
+        }
+
         Ok(Self {
             coredump: self.coredump,
             func_names: Some(func_names.clone()),
-            debug_module: None,
+            debug_module: Some(debug_module.to_owned()),
         })
     }
 
