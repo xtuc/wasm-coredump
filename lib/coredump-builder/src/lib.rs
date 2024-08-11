@@ -23,8 +23,14 @@
 //! ```
 //!
 //! [Wasm Coredump]: https://github.com/WebAssembly/tool-conventions/blob/main/Coredump.md
+#![cfg_attr(not(test), no_std)]
 
-type BoxError = Box<dyn std::error::Error + Sync + Send>;
+extern crate alloc;
+use alloc::borrow::ToOwned;
+use alloc::string::String;
+use alloc::vec;
+use alloc::vec::Vec;
+use core::convert::Infallible;
 
 #[cfg(test)]
 mod test;
@@ -117,7 +123,7 @@ impl CoredumpBuilder {
     }
 
     /// Serialize the coredump to bytes, using the Wasm binary format.
-    pub fn serialize(self) -> Result<Vec<u8>, BoxError> {
+    pub fn serialize(self) -> Result<Vec<u8>, Infallible> {
         let mut module = wasm_encoder::Module::new();
 
         // core
