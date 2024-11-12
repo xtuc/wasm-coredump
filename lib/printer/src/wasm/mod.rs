@@ -758,6 +758,49 @@ fn write_code_expr(buffer: &mut Vec<u8>, expr: &Vec<ast::Value<ast::Instr>>) {
         write_instr!(0xc3, i64_extend16_s);
         write_instr!(0xc4, i64_extend32_s);
 
+        // https://webassembly.github.io/spec/core/binary/instructions.html#numeric-instructions
+        // saturating truncation instructions
+        if matches!(id, ast::Instr::i32_trunc_sat_f32_s) {
+            buffer.push(0xfc);
+            buffer.push(0);
+            continue;
+        }
+        if matches!(id, ast::Instr::i32_trunc_sat_f32_u) {
+            buffer.push(0xfc);
+            buffer.push(1);
+            continue;
+        }
+        if matches!(id, ast::Instr::i32_trunc_sat_f64_s) {
+            buffer.push(0xfc);
+            buffer.push(2);
+            continue;
+        }
+        if matches!(id, ast::Instr::i32_trunc_sat_f64_u) {
+            buffer.push(0xfc);
+            buffer.push(3);
+            continue;
+        }
+        if matches!(id, ast::Instr::i64_trunc_sat_f32_s) {
+            buffer.push(0xfc);
+            buffer.push(4);
+            continue;
+        }
+        if matches!(id, ast::Instr::i64_trunc_sat_f32_u) {
+            buffer.push(0xfc);
+            buffer.push(5);
+            continue;
+        }
+        if matches!(id, ast::Instr::i64_trunc_sat_f64_s) {
+            buffer.push(0xfc);
+            buffer.push(6);
+            continue;
+        }
+        if matches!(id, ast::Instr::i64_trunc_sat_f64_u) {
+            buffer.push(0xfc);
+            buffer.push(7);
+            continue;
+        }
+
         if let ast::Instr::memory_copy(imm0, imm1) = id {
             buffer.push(0xfc);
             buffer.push(10);

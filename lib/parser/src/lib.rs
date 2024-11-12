@@ -928,6 +928,74 @@ fn decode_instr<'a>(ctx: InputContext<'a>) -> IResult<InputContext<'a>, ast::Val
         let end_offset = ctx.offset;
 
         match b {
+            // https://webassembly.github.io/spec/core/binary/instructions.html#numeric-instructions
+            // saturating truncation instructions
+            0 => {
+                let value = ast::Value {
+                    start_offset,
+                    value: ast::Instr::i32_trunc_sat_f32_s,
+                    end_offset,
+                };
+                return Ok((ctx, value));
+            }
+            1 => {
+                let value = ast::Value {
+                    start_offset,
+                    value: ast::Instr::i32_trunc_sat_f32_u,
+                    end_offset,
+                };
+                return Ok((ctx, value));
+            }
+            2 => {
+                let value = ast::Value {
+                    start_offset,
+                    value: ast::Instr::i32_trunc_sat_f64_s,
+                    end_offset,
+                };
+                return Ok((ctx, value));
+            }
+            3 => {
+                let value = ast::Value {
+                    start_offset,
+                    value: ast::Instr::i32_trunc_sat_f64_u,
+                    end_offset,
+                };
+                return Ok((ctx, value));
+            }
+            4 => {
+                let value = ast::Value {
+                    start_offset,
+                    value: ast::Instr::i64_trunc_sat_f32_s,
+                    end_offset,
+                };
+                return Ok((ctx, value));
+            }
+            5 => {
+                let value = ast::Value {
+                    start_offset,
+                    value: ast::Instr::i64_trunc_sat_f32_u,
+                    end_offset,
+                };
+                return Ok((ctx, value));
+            }
+            6 => {
+                let value = ast::Value {
+                    start_offset,
+                    value: ast::Instr::i64_trunc_sat_f64_s,
+                    end_offset,
+                };
+                return Ok((ctx, value));
+            }
+            7 => {
+                let value = ast::Value {
+                    start_offset,
+                    value: ast::Instr::i64_trunc_sat_f64_u,
+                    end_offset,
+                };
+                return Ok((ctx, value));
+            }
+
+            // other instructions
             10 => {
                 let (ctx, imm0) = ctx.read_u8()?;
                 let (ctx, imm1) = ctx.read_u8()?;
