@@ -1,3 +1,7 @@
+.PHONY: setup
+setup:
+	cd ./lib/asc-coredump && yarn
+
 target/debug/coredump-dump:
 	cargo build
 
