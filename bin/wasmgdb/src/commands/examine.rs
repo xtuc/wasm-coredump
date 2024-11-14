@@ -1,15 +1,13 @@
 use crate::commands::{Expr, PrintFormat};
-use crate::repl::Context;
 use crate::BoxError;
 use std::fmt::Write;
 
 pub(crate) fn examine<'a>(
-    ctx: &'a Context<'a>,
+    coredump: &wasm_coredump_types::Coredump,
     what: Expr<'a>,
     number: Option<u32>,
     format: Option<PrintFormat>,
 ) -> Result<(), BoxError> {
-    let coredump = ctx.coredump.as_ref().ok_or("no coredump present")?;
     let addr = if let Expr::Hex(addr) = what {
         addr
     } else {

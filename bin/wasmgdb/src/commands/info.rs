@@ -1,13 +1,13 @@
 use super::Expr;
 use crate::memory;
-use crate::repl::{print_value, Context};
-use crate::BoxError;
+use crate::repl::print_value;
+use crate::{BoxError, Context};
 use colored::Colorize;
 
-pub(crate) fn info<'a>(
-    ctx: &'a Context<'a>,
-    what: &'a str,
-    args: Vec<Expr>,
+pub(crate) fn info<'src, 'input>(
+    ctx: &'src Context<'src>,
+    what: &'input str,
+    args: Vec<Expr<'input>>,
 ) -> Result<(), BoxError> {
     match what {
         "types" => {
@@ -22,10 +22,11 @@ pub(crate) fn info<'a>(
         }
 
         "locals" => {
-            let frame = ctx.selected_frame.as_ref().ok_or("no selected frame")?;
+            let selected_frame = ctx.selected_frame.borrow();
+            let selected_frame = selected_frame.as_ref().ok_or("no selected frame")?;
             let binary_name = ctx
                 .source
-                .get_func_name(frame.funcidx)
+                .get_func_name(selected_frame.funcidx)
                 .unwrap_or_else(|| "unknown".to_string());
             let func = ctx
                 .ddbug
@@ -33,10 +34,10 @@ pub(crate) fn info<'a>(
                 .get(&binary_name)
                 .ok_or(format!("function {} not found", binary_name))?;
 
-            for (name, param) in ctx.variables.iter() {
+            for (name, param) in ctx.variables.borrow().iter() {
                 let ty = param.ty(&ctx.ddbug).unwrap();
 
-                let addr = memory::get_param_addr(frame, func, &param)?;
+                let addr = memory::get_param_addr(selected_frame, func, &param)?;
                 let value = print_value(ctx, addr, ty.as_ref(), 0)?;
 
                 println!("{}: {}", name, value)
@@ -156,12 +157,11 @@ pub(crate) fn info<'a>(
         }
 
         "process" => {
-            if let Some(coredump) = &ctx.coredump {
-                println!(
-                    "executable-name = {}",
-                    coredump.process_info.executable_name
-                );
-            }
+            let coredump = ctx.coredump()?;
+            println!(
+                "executable-name = {}",
+                coredump.process_info.executable_name
+            );
             Ok(())
         }
 

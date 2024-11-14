@@ -1,15 +1,15 @@
 use crate::commands::Expr;
-use crate::repl::Context;
 use crate::BoxError;
+use crate::Context;
 use colored::Colorize;
 
-pub(crate) fn find<'a>(
-    ctx: &'a Context<'a>,
-    start: Option<Expr<'a>>,
-    end: Option<Expr<'a>>,
-    expr: Expr<'a>,
+pub(crate) fn find<'src, 'input>(
+    ctx: &'src Context<'src>,
+    start: Option<Expr<'input>>,
+    end: Option<Expr<'input>>,
+    expr: Expr<'input>,
 ) -> Result<(), BoxError> {
-    let coredump = ctx.coredump.as_ref().ok_or("no coredump present")?;
+    let coredump = ctx.coredump()?;
 
     let start = if let Some(Expr::Hex(v)) = start {
         v as usize

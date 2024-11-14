@@ -1,9 +1,8 @@
-use crate::repl::Context;
-use crate::BoxError;
+use crate::{BoxError, Context};
 use std::sync::Arc;
 use wasmtime_wasi::sync::WasiCtxBuilder;
 
-pub(crate) fn run<'a>(ctx: &mut Context<'a>) -> Result<(), BoxError> {
+pub(crate) fn run<'a>(ctx: &Context<'a>) -> Result<(), BoxError> {
     let module = ctx.source.inner.clone();
     let check_memory_operations = true;
     wasm_coredump_rewriter::rewrite(Arc::clone(&module), check_memory_operations)?;
@@ -40,8 +39,8 @@ pub(crate) fn run<'a>(ctx: &mut Context<'a>) -> Result<(), BoxError> {
                 .map_err(|err| format!("failed to parse Wasm module: {}", err))?;
             let coredump_wasm = core_wasm_ast::traverse::WasmModule::new(Arc::new(coredump_wasm));
 
-            ctx.coredump = Some(coredump_wasm.get_coredump()?);
-            ctx.selected_thread = Some(0);
+            *ctx.coredump.borrow_mut() = Some(coredump_wasm.get_coredump()?);
+            *ctx.selected_thread.borrow_mut() = Some(0);
         }
         Ok(o) => {
             println!("program exited successfully: {:?}", o);

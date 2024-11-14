@@ -1,7 +1,6 @@
 //! Handles the parsing and execution of commands
 
-use crate::repl::Context;
-use crate::BoxError;
+use crate::{BoxError, Context};
 use std::fmt;
 
 mod breakpoint;
@@ -68,7 +67,10 @@ pub(crate) enum PrintFormat {
     String,
 }
 
-pub(crate) fn run_command(ctx: &mut Context, cmd: Command) -> Result<(), BoxError> {
+pub(crate) fn run_command<'src, 'input>(
+    ctx: &'src Context<'src>,
+    cmd: Command<'input>,
+) -> Result<(), BoxError> {
     match cmd {
         Command::Run => {
             run::run(ctx)?;
@@ -80,35 +82,36 @@ pub(crate) fn run_command(ctx: &mut Context, cmd: Command) -> Result<(), BoxErro
 
         Command::Backtrace => {
             let thread = ctx.thread()?;
-            frames::backtrace(&ctx, &thread)?;
+            frames::backtrace(ctx, &thread)?;
         }
 
         Command::Examine(what, (number, format)) => {
-            examine::examine(&ctx, what, number, format)?;
+            let coredump = ctx.coredump()?;
+            examine::examine(&coredump, what, number, format)?;
         }
 
         Command::Print(format, what) => {
-            print::print(&ctx, format, what)?;
+            print::print(ctx, format, what)?;
         }
 
         Command::Find(start, end, expr) => {
-            find::find(&ctx, start, end, expr)?;
+            find::find(ctx, start, end, expr)?;
         }
 
         Command::Info(what, args) => {
-            info::info(&ctx, what, args)?;
+            info::info(ctx, what, args)?;
         }
 
         Command::SelectFrame(selected_frame) => {
             let thread = ctx.thread()?;
             let stack_frame = &thread.frames[thread.frames.len() - 1 - selected_frame];
 
-            frames::print_frame(&ctx, &stack_frame)?;
+            frames::print_frame(ctx, &stack_frame)?;
             frames::select_frame(ctx, &stack_frame)?;
-            ctx.selected_frame = Some(stack_frame.clone());
+            *ctx.selected_frame.borrow_mut() = Some(stack_frame.clone());
         }
 
-        Command::Unknown => return Err("unknow command".into()),
+        Command::Unknown => return Err("unknown command".into()),
     }
 
     Ok(())

@@ -1,11 +1,10 @@
-use crate::repl::Context;
-use crate::BoxError;
+use crate::{BoxError, Context};
 use colored::Colorize;
 use core_wasm_ast as ast;
 use core_wasm_ast::traverse::{self, Visitor, VisitorContext, WasmModule};
 use std::sync::Arc;
 
-pub(crate) fn set_breakpoint(ctx: &mut Context, pos: u32) -> Result<(), BoxError> {
+pub(crate) fn set_breakpoint(ctx: &Context, pos: u32) -> Result<(), BoxError> {
     ctx.break_points.lock().unwrap().insert(pos);
 
     let module = WasmModule::new(Arc::clone(&ctx.source.inner));

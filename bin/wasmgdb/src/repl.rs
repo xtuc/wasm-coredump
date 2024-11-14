@@ -1,62 +1,25 @@
 use crate::commands::parser::parse_command;
 use crate::commands::run_command;
 use crate::memory;
+use crate::Context;
 use colored::Colorize;
 use log::error;
-use std::collections::HashMap;
-use std::collections::HashSet;
 use std::fmt::Write;
 use std::io;
 use std::io::BufRead;
 use std::io::Write as IoWrite;
-use std::sync::Mutex;
 use wasmgdb_ddbug_parser as ddbug_parser;
 
 pub(crate) type BoxError = Box<dyn std::error::Error>;
 
-pub(crate) struct Context<'a> {
-    pub(crate) selected_frame: Option<wasm_coredump_types::StackFrame>,
-    pub(crate) selected_thread: Option<usize>,
-
-    /// Variables present in the selected scope
-    pub(crate) variables: HashMap<String, ddbug_parser::Parameter<'a>>,
-
-    pub(crate) coredump: Option<wasm_coredump_types::Coredump>,
-
-    /// DWARF informations
-    pub(crate) ddbug: ddbug_parser::FileHash<'a>,
-
-    /// Source Wasm module
-    pub(crate) source: &'a core_wasm_ast::traverse::WasmModule,
-
-    pub(crate) break_points: Mutex<HashSet<u32>>,
-}
-
-impl<'a> Context<'a> {
-    pub(crate) fn coredump(&mut self) -> Result<wasm_coredump_types::Coredump, BoxError> {
-        self.coredump
-            .as_ref()
-            .map(|c| c.clone())
-            .ok_or("No coredump present".into())
-    }
-
-    pub(crate) fn thread(&mut self) -> Result<wasm_coredump_types::CoreStack, BoxError> {
-        let coredump = self.coredump()?;
-
-        self.selected_thread
-            .map(|idx| coredump.stacks[idx].clone())
-            .ok_or("No frame selected".into())
-    }
-}
-
 pub(crate) fn print_value<'a>(
     ctx: &'a Context<'a>,
     addr: u32,
-    type_: &'a ddbug_parser::Type,
+    type_: &ddbug_parser::Type<'a>,
     mut depth: usize,
 ) -> Result<String, BoxError> {
     let ident = "\t".repeat(depth);
-    let coredump = ctx.coredump.as_ref().ok_or("no coredump present")?;
+    let coredump = ctx.coredump()?;
 
     match &type_.kind() {
         ddbug_parser::TypeKind::Modifier(type_modifier)
@@ -150,7 +113,7 @@ pub(crate) fn print_value<'a>(
 }
 
 fn get_enum_name<'i>(
-    ctx: &Context<'i>,
+    ctx: &'i Context<'i>,
     ty: &ddbug_parser::EnumerationType<'i>,
     bytes: &[u8],
 ) -> Option<String> {
@@ -171,23 +134,7 @@ fn get_enum_name<'i>(
     None
 }
 
-pub(crate) fn repl(
-    coredump: Option<wasm_coredump_types::Coredump>,
-    source: &core_wasm_ast::traverse::WasmModule,
-    ddbug: ddbug_parser::FileHash<'_>,
-) -> Result<(), BoxError> {
-    let mut ctx = Context {
-        ddbug,
-        coredump,
-        source,
-        variables: HashMap::new(),
-
-        selected_frame: None,
-        selected_thread: Some(0), // auto select the first thread
-
-        break_points: Mutex::new(HashSet::new()),
-    };
-
+pub(crate) fn repl<'a>(ctx: &'a Context<'a>) -> Result<(), BoxError> {
     let stdin = io::stdin();
     loop {
         print!("wasmgdb> ");
@@ -197,7 +144,7 @@ pub(crate) fn repl(
             let line = line?;
             match parse_command(&line) {
                 Ok((_, cmd)) => {
-                    if let Err(err) = run_command(&mut ctx, cmd) {
+                    if let Err(err) = run_command(ctx, cmd) {
                         error!("failed to run command ({}): {}", line, err);
                     }
                 }

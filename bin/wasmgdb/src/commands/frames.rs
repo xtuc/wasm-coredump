@@ -1,17 +1,16 @@
-use crate::repl::Context;
-use crate::{memory, BoxError};
+use crate::{memory, BoxError, Context};
 use colored::Colorize;
 use log::debug;
 
 pub(crate) fn backtrace<'a>(
-    ctx: &Context<'a>,
+    ctx: &'a Context<'a>,
     thread: &wasm_coredump_types::CoreStack,
 ) -> Result<(), BoxError> {
     let mut i = thread.frames.len();
     for frame in &thread.frames {
         i -= 1;
-        if let Some(selected_frame) = &ctx.selected_frame {
-            if selected_frame.funcidx == frame.codeoffset {
+        if let Some(selected_frame) = ctx.selected_frame.borrow().clone() {
+            if selected_frame.funcidx == frame.funcidx {
                 print!("#{}*\t", i);
             } else {
                 print!("#{}\t", i);
@@ -27,23 +26,31 @@ pub(crate) fn backtrace<'a>(
 }
 
 pub(crate) fn print_frame<'a>(
-    ctx: &Context<'a>,
+    ctx: &'a Context<'a>,
     frame: &wasm_coredump_types::StackFrame,
 ) -> Result<(), BoxError> {
-    let coredump = ctx.coredump.as_ref().ok_or("no coredump present")?;
+    let coredump = ctx.coredump()?;
     let binary_name = ctx
         .source
         .get_func_name(frame.funcidx)
         .unwrap_or_else(|| "unknown".to_string());
 
     if let Some(func) = ctx.ddbug.functions_by_linkage_name.get(&binary_name) {
-        let source = format!(
-            "{}/{}",
-            func.source()
-                .directory()
-                .unwrap_or_else(|| "<directory not found>"),
-            func.source().file().unwrap_or_else(|| "<file not found>")
-        );
+        let mut addr2line = ctx.addr2line.borrow_mut();
+        let addr2line = addr2line
+            .context(frame.codeoffset as u64, true)
+            .map_err(|err| format!("failed to find code offset: {err}"))?
+            .unwrap();
+
+        let source = if let Ok(Some(loc)) = addr2line.0.find_location(addr2line.1) {
+            format!(
+                "{}:{}",
+                loc.file.unwrap_or("<unknown>"),
+                loc.line.unwrap_or(0)
+            )
+        } else {
+            format!("<location 0x{} not found>", frame.codeoffset)
+        };
 
         let function = {
             let name = func.name().unwrap();
@@ -98,11 +105,11 @@ pub(crate) fn print_frame<'a>(
 }
 
 pub(crate) fn select_frame<'a>(
-    ctx: &mut Context<'a>,
+    ctx: &Context<'a>,
     frame: &wasm_coredump_types::StackFrame,
 ) -> Result<(), BoxError> {
     // Clear previous selected scope
-    ctx.variables.clear();
+    ctx.variables.borrow_mut().clear();
 
     let binary_name = ctx
         .source
@@ -117,7 +124,9 @@ pub(crate) fn select_frame<'a>(
 
     for param in func.details(&ctx.ddbug).parameters() {
         if let Some(name) = param.name() {
-            ctx.variables.insert(name.to_owned(), param.clone());
+            ctx.variables
+                .borrow_mut()
+                .insert(name.to_owned(), param.clone());
         }
     }
     Ok(())

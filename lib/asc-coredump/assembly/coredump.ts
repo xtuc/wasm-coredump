@@ -35,7 +35,7 @@ function write_thread_info(ptr: u32): u32 {
 export function start_frame(codeoffset: u32, funcidx: u32, local_count: u32): void {
   if (load<u32>(0) === 0x6d736100) {
     // Check for the presence of the wasm\0 header, meaning a coredump
-    // would already have been written.
+    // is currently being emitted.
     unreachable()
   }
 

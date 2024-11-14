@@ -1,6 +1,6 @@
 use crate::commands::{Expr, PrintFormat};
-use crate::repl::{print_value, Context};
-use crate::{memory, BoxError};
+use crate::repl::print_value;
+use crate::{memory, BoxError, Context};
 use log::error;
 use std::fmt::Write;
 use wasmgdb_ddbug_parser as ddbug_parser;
@@ -31,23 +31,23 @@ fn get_member<'a>(
     Err(format!("member {} not found in object type {}", search, ty).into())
 }
 
-struct EvaluationCtx<'a, 'b> {
-    ddbug: &'b ddbug_parser::FileHash<'a>,
-    coredump: &'a [u8],
+struct EvaluationCtx<'src> {
+    ddbug: &'src ddbug_parser::FileHash<'src>,
+    coredump: Vec<u8>,
 }
 
-struct EvaluationResult<'a> {
+struct EvaluationResult<'src, 'input> {
     addr: u32,
-    ty: Option<ddbug_parser::Type<'a>>,
-    expr: Expr<'a>,
+    ty: Option<ddbug_parser::Type<'src>>,
+    expr: Expr<'input>,
 }
 
-fn evaluate_expr<'a, 'b>(
-    ctx: &'b EvaluationCtx<'a, 'b>,
+fn evaluate_expr<'src, 'input>(
+    ctx: &'_ EvaluationCtx<'src>,
     base_addr: u32,
-    expr: Expr<'a>,
-    expr_type: Option<ddbug_parser::Type<'a>>,
-) -> Result<EvaluationResult<'a>, BoxError> {
+    expr: Expr<'input>,
+    expr_type: Option<ddbug_parser::Type<'src>>,
+) -> Result<EvaluationResult<'src, 'input>, BoxError> {
     match &expr {
         Expr::Int(_) | Expr::Str(_) => {
             unreachable!()
@@ -65,7 +65,7 @@ fn evaluate_expr<'a, 'b>(
         }),
 
         Expr::Cast(typename, expr) => {
-            let type_ = find_type_by_name(ctx.ddbug, typename)
+            let type_ = find_type_by_name(&ctx.ddbug, typename)
                 .ok_or(format!("type {} not found", typename))?;
             evaluate_expr(ctx, base_addr, *expr.clone(), Some(type_.to_owned()))
         }
@@ -109,15 +109,13 @@ fn evaluate_expr<'a, 'b>(
     }
 }
 
-pub(crate) fn print<'a>(
-    ctx: &Context<'a>,
+pub(crate) fn print<'src, 'input>(
+    ctx: &'src Context<'src>,
     format: PrintFormat,
-    what: Expr<'a>,
+    what: Expr<'input>,
 ) -> Result<(), BoxError> {
-    let selected_frame = ctx
-        .selected_frame
-        .as_ref()
-        .ok_or("no frame has been selected")?;
+    let selected_frame = ctx.selected_frame.borrow();
+    let selected_frame = selected_frame.as_ref().ok_or("no selected frame")?;
     let binary_name = ctx
         .source
         .get_func_name(selected_frame.funcidx)
@@ -127,17 +125,17 @@ pub(crate) fn print<'a>(
         .functions_by_linkage_name
         .get(&binary_name)
         .ok_or(format!("function {} not found", binary_name))?;
-    let coredump = ctx.coredump.as_ref().ok_or("no coredump present")?;
+    let coredump = ctx.coredump()?;
 
     if let Some(object) = what.object() {
-        if let Some(variable) = ctx.variables.get(object) {
+        if let Some(variable) = ctx.variables.borrow().get(object) {
             let what_type = variable.ty(&ctx.ddbug).unwrap();
             let base_addr = memory::get_param_addr(&selected_frame, &func, &variable)?;
 
             // Evaluate the `what` expression
             let eval_ctx = EvaluationCtx {
                 ddbug: &ctx.ddbug,
-                coredump: &coredump.data,
+                coredump: coredump.data.clone(),
             };
             let result = evaluate_expr(&eval_ctx, base_addr, what, Some(what_type.into_owned()))?;
 
@@ -161,7 +159,7 @@ pub(crate) fn print<'a>(
 
                 PrintFormat::None => {
                     if let Some(ty) = &result.ty {
-                        let out = print_value(&ctx, result.addr, ty, 0)?;
+                        let out = print_value(ctx, result.addr, ty, 0)?;
                         println!("{} (0x{:x}): {}", result.expr, result.addr, out);
                     } else {
                         error!("don't know how to print value");
@@ -175,7 +173,7 @@ pub(crate) fn print<'a>(
         // Evaluate the `what` expression
         let eval_ctx = EvaluationCtx {
             ddbug: &ctx.ddbug,
-            coredump: &coredump.data,
+            coredump: coredump.data.clone(),
         };
         let result = evaluate_expr(&eval_ctx, 0, what, None)?;
 
@@ -200,7 +198,7 @@ pub(crate) fn print<'a>(
 
             PrintFormat::None => {
                 if let Some(ty) = &result.ty {
-                    let out = print_value(&ctx, result.addr, ty, 0)?;
+                    let out = print_value(ctx, result.addr, ty, 0)?;
                     println!("{} (0x{:x}): {}", result.expr, result.addr, out);
                 } else {
                     error!("don't know how to print value");
