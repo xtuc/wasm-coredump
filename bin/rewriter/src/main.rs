@@ -17,6 +17,10 @@ struct Args {
     /// Wraps each memory operation.
     /// This will likely reduce significantly your program's performance.
     check_memory_operations: bool,
+
+    #[arg(long)]
+    /// Enable debugging, mostly useful for developing this tooling.
+    debug: bool,
 }
 
 type BoxError = Box<dyn std::error::Error>;
@@ -38,7 +42,11 @@ fn main() -> Result<(), BoxError> {
     info!("decode: {:.2?}", elapsed);
 
     let now = Instant::now();
-    rewriter::rewrite(Arc::clone(&module), args.check_memory_operations)?;
+    rewriter::rewrite(
+        Arc::clone(&module),
+        args.check_memory_operations,
+        args.debug,
+    )?;
     let elapsed = now.elapsed();
     info!("transform: {:.2?}", elapsed);
 

@@ -472,6 +472,24 @@ impl WasmModule {
         return Some(0);
     }
 
+    pub fn add_export_func(&self, name: &str, funcidx: u32) {
+        for section in self.inner.sections.lock().unwrap().iter() {
+            match &section.value {
+                ast::Section::Export((_section_size, content)) => {
+                    let export = ast::Export {
+                        name: name.to_owned(),
+                        descr: ast::ExportDescr::Func(Arc::new(Mutex::new(funcidx))),
+                    };
+                    content.lock().unwrap().push(export.to_owned());
+                    return;
+                }
+                _ => {}
+            }
+        }
+
+        unimplemented!("no export section")
+    }
+
     pub fn add_function(&self, func: &ast::Code, typeidx: u32) -> u32 {
         let mut funcidx = 0;
 

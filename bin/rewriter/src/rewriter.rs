@@ -14,6 +14,8 @@ use log::debug;
 use std::sync::Arc;
 use std::sync::Mutex;
 
+// Default value for the entry_funcidx global, indicates the absence of a
+// value.
 const NO_ENTRY_FUNCIDX_VALUE: i32 = i32::MAX;
 
 type BoxError = Box<dyn std::error::Error>;
@@ -21,6 +23,7 @@ type BoxError = Box<dyn std::error::Error>;
 pub fn rewrite(
     module_ast: Arc<ast::Module>,
     check_memory_operations: bool,
+    debug: bool,
 ) -> Result<(), BoxError> {
     let module = WasmModule::new(Arc::clone(&module_ast));
 
@@ -107,7 +110,7 @@ pub fn rewrite(
 
         let body = ast::body![[
             ast::Value::new(ast::Instr::i32_const(1)),
-            ast::Value::new(ast::Instr::global_set(is_unwinding))
+            ast::Value::new(ast::Instr::global_set(is_unwinding)),
         ]];
         let func = ast::Code {
             locals: vec![],
@@ -199,8 +202,47 @@ pub fn rewrite(
         add_f64_local,
 
         check_memory_operations,
+        debug,
     };
     traverse::traverse(Arc::clone(&module_ast), Arc::new(visitor));
+
+    if debug {
+        module.add_export_func("write_coredump", write_coredump);
+
+        // export get_entry_funcidx
+        {
+            let t = ast::make_type! { () -> I32 };
+            let typeidx = module.add_type(&t);
+
+            let body = ast::body![[ast::Value::new(ast::Instr::global_get(entry_funcidx))]];
+            let func = ast::Code {
+                locals: vec![],
+                size: ast::Value::new(0), // printer calculates based on the body
+                body: Arc::new(Mutex::new(body)),
+            };
+            let funcidx = module.add_function(&func, typeidx);
+            module.add_func_name(funcidx, "coredump/get_entry_funcidx");
+            module.add_export_func("get_entry_funcidx", funcidx);
+            funcidx
+        };
+
+        // export is_unwinding
+        {
+            let t = ast::make_type! { () -> I32 };
+            let typeidx = module.add_type(&t);
+
+            let body = ast::body![[ast::Value::new(ast::Instr::global_get(is_unwinding))]];
+            let func = ast::Code {
+                locals: vec![],
+                size: ast::Value::new(0), // printer calculates based on the body
+                body: Arc::new(Mutex::new(body)),
+            };
+            let funcidx = module.add_function(&func, typeidx);
+            module.add_func_name(funcidx, "coredump/is_unwinding");
+            module.add_export_func("is_unwinding", funcidx);
+            funcidx
+        };
+    }
 
     Ok(())
 }
@@ -233,6 +275,7 @@ struct CoredumpTransform {
     add_f64_local: u32,
 
     check_memory_operations: bool,
+    debug: bool,
 }
 
 fn prepend<T>(v: Vec<T>, s: &[T]) -> Vec<T>
@@ -249,26 +292,57 @@ impl Visitor for CoredumpTransform {
         if ctx.module.is_func_exported(funcidx) {
             let mut func_body = ctx.node.body.lock().unwrap();
 
-            let mut new_code = vec![];
-
-            new_code.push(ast::Value::new(ast::Instr::global_get(self.entry_funcidx)));
-            new_code.push(ast::Value::new(ast::Instr::i32_const(
-                NO_ENTRY_FUNCIDX_VALUE as i64,
-            )));
-            new_code.push(ast::Value::new(ast::Instr::i32_eq));
-
-            let mut if_body = vec![];
+            // entry code
+            // sets entry_funcidx
             {
-                if_body.push(ast::Value::new(ast::Instr::i32_const(funcidx as i64)));
-                if_body.push(ast::Value::new(ast::Instr::global_set(self.entry_funcidx)));
-                if_body.push(ast::Value::new(ast::Instr::end));
+                let mut entry = vec![];
+
+                entry.push(ast::Value::new(ast::Instr::global_get(self.entry_funcidx)));
+                entry.push(ast::Value::new(ast::Instr::i32_const(
+                    NO_ENTRY_FUNCIDX_VALUE as i64,
+                )));
+                entry.push(ast::Value::new(ast::Instr::i32_eq));
+
+                let mut if_body = vec![];
+                {
+                    if_body.push(ast::Value::new(ast::Instr::i32_const(funcidx as i64)));
+                    if_body.push(ast::Value::new(ast::Instr::global_set(self.entry_funcidx)));
+                    if_body.push(ast::Value::new(ast::Instr::end));
+                }
+
+                let if_body = ast::Value::new(if_body);
+                let if_node = ast::Instr::If(ast::BlockType::Empty, Arc::new(Mutex::new(if_body)));
+                entry.push(ast::Value::new(if_node));
+
+                func_body.value = prepend(func_body.value.clone(), &entry);
             }
 
-            let if_body = ast::Value::new(if_body);
-            let if_node = ast::Instr::If(ast::BlockType::Empty, Arc::new(Mutex::new(if_body)));
-            new_code.push(ast::Value::new(if_node));
+            // exit code
+            // removes entry_funcidx if not unreachable was hit and we
+            // are not unwinding
+            {
+                let mut exit = vec![];
 
-            func_body.value = prepend(func_body.value.clone(), &new_code);
+                exit.push(ast::Value::new(ast::Instr::global_get(self.is_unwinding)));
+                exit.push(ast::Value::new(ast::Instr::i32_eqz));
+
+                let mut if_body = vec![];
+                {
+                    if_body.push(ast::Value::new(ast::Instr::i32_const(
+                        NO_ENTRY_FUNCIDX_VALUE as i64,
+                    )));
+                    if_body.push(ast::Value::new(ast::Instr::global_set(self.entry_funcidx)));
+                    if_body.push(ast::Value::new(ast::Instr::end));
+                }
+
+                let if_body = ast::Value::new(if_body);
+                let if_node = ast::Instr::If(ast::BlockType::Empty, Arc::new(Mutex::new(if_body)));
+                exit.push(ast::Value::new(if_node));
+
+                func_body.value.pop(); // remove the previous end instruction
+                func_body.value.extend(exit);
+                func_body.value.push(ast::Value::new(ast::Instr::end));
+            }
         }
     }
 
