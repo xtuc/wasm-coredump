@@ -1,6 +1,6 @@
 [package]
 name = "wasm-parser"
-version = "0.1.22"
+version = "0.1.23"
 edition = "2021"
 authors = ["Sven Sauleau <sven@sauleau.com>"]
 license = "MIT"
@@ -13,10 +13,10 @@ leb128 = "0.2.5"
 nom = "7"
 env_logger = "0.9.1"
 log = "0.4.17"
-core-wasm-ast = { path = "../ast", version = "0.1.22" }
-wasm-coredump-types = { path = "../coredump-types", version = "0.1.22" }
+core-wasm-ast = { path = "../ast", version = "0.1.23" }
+wasm-coredump-types = { path = "../coredump-types", version = "0.1.23" }
 
 [dev-dependencies]
-wasm-coredump-encoder = { path = "../coredump-encoder", version = "0.1.22" }
-wasm-coredump-builder = { path = "../coredump-builder", version = "0.1.22" }
-wasm-printer = { path = "../printer", version = "0.1.22" }
+wasm-coredump-encoder = { path = "../coredump-encoder", version = "0.1.23" }
+wasm-coredump-builder = { path = "../coredump-builder", version = "0.1.23" }
+wasm-printer = { path = "../printer", version = "0.1.23" }

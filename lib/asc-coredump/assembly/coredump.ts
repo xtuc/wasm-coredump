@@ -119,11 +119,11 @@ export function add_i64_local(v: i64): void {
 }
 
 export function write_coredump(): void {
-  if (load<u32>(0) === 0x6d736100) {
-    // Check for the presence of the wasm\0 header, meaning a coredump
-    // would already have been written.
-    unreachable()
-  }
+  // if (load<u32>(0) === 0x6d736100) {
+  //   // Check for the presence of the wasm\0 header, meaning a coredump
+  //   // would already have been written.
+  //   unreachable()
+  // }
 
   let ptr: u32 = 0;
 
