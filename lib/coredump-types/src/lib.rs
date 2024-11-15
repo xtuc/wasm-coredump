@@ -1,3 +1,8 @@
+#![no_std]
+extern crate alloc;
+use alloc::string::String;
+use alloc::vec::Vec;
+
 #[derive(Debug, Clone)]
 pub struct ProcessInfo {
     pub executable_name: String,
