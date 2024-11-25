@@ -1,0 +1,17 @@
+{
+  "extends": "./node_modules/@assemblyscript/wasi-shim/asconfig.json",
+  "entries": [
+    "./assembly/coredump-wasi.ts"
+  ],
+  "options": {
+    "runtime": "stub"
+  },
+  "targets": {
+    "runtime": {
+      "outFile": "./build/runtime-wasi.wasm",
+      "textFile": "./build/runtime-wasi.wast",
+      "debug": true,
+      "optimizeLevel": 3
+    }
+  }
+}

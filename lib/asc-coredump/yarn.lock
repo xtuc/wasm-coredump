@@ -2,14 +2,19 @@
 # yarn lockfile v1
 
 
+"@assemblyscript/wasi-shim@^0.1.0":
+  version "0.1.0"
+  resolved "https://registry.npmjs.org/@assemblyscript/wasi-shim/-/wasi-shim-0.1.0.tgz"
+  integrity sha512-fSLH7MdJHf2uDW5llA5VCF/CG62Jp2WkYGui9/3vIWs3jDhViGeQF7nMYLUjpigluM5fnq61I6obtCETy39FZw==
+
 asc-wasm@0.0.2:
   version "0.0.2"
-  resolved "https://registry.yarnpkg.com/asc-wasm/-/asc-wasm-0.0.2.tgz#3ef9206c68ecd30158dbf5d38ba49f295f80a599"
+  resolved "https://registry.npmjs.org/asc-wasm/-/asc-wasm-0.0.2.tgz"
   integrity sha512-+RA349FpNcptRxAyilkv4dzq/MZZVAuMhc8kwm+D2x2JRJ9mEaTDnY7vB0mIk+29Xk1fU4jEpZu0ZARjyRlKvw==
 
 assemblyscript@^0.20.7:
   version "0.20.19"
-  resolved "https://registry.yarnpkg.com/assemblyscript/-/assemblyscript-0.20.19.tgz#7c29f506a31d526f7d7e3b22908cc8774b378681"
+  resolved "https://registry.npmjs.org/assemblyscript/-/assemblyscript-0.20.19.tgz"
   integrity sha512-IJN2CaAwCdRgTSZz3GiuYyXtXIjETBrlzky9ww9jFlEgH8i0pNFt6MAS3viogkofem+rcY6Fhr/clk+b6LWLBw==
   dependencies:
     binaryen "109.0.0-nightly.20220813"
@@ -17,15 +22,15 @@ assemblyscript@^0.20.7:
 
 binaryen@109.0.0-nightly.20220813:
   version "109.0.0-nightly.20220813"
-  resolved "https://registry.yarnpkg.com/binaryen/-/binaryen-109.0.0-nightly.20220813.tgz#6928acf8820fc1270d41dbb157c0c2337a067d20"
+  resolved "https://registry.npmjs.org/binaryen/-/binaryen-109.0.0-nightly.20220813.tgz"
   integrity sha512-u85Ti3LiGRrV0HqdNDRknalkx7QiCSL0jNsEsT522nnZacWxUaSJEILphxc2OnzmHVtdiWBE3c4lEzlU3ZEyDw==
 
 long@^5.2.0:
   version "5.2.3"
-  resolved "https://registry.yarnpkg.com/long/-/long-5.2.3.tgz#a3ba97f3877cf1d778eccbcb048525ebb77499e1"
+  resolved "https://registry.npmjs.org/long/-/long-5.2.3.tgz"
   integrity sha512-lcHwpNoggQTObv5apGNCTdJrO69eHOZMi4BNC+rTLER8iHAqGrUVeLh/irVIM7zTw2bOXA8T6uNPeujwOLg/2Q==
 
 prettier@^2.8.3:
   version "2.8.8"
-  resolved "https://registry.yarnpkg.com/prettier/-/prettier-2.8.8.tgz#e8c5d7e98a4305ffe3de2e1fc4aca1a71c28b1da"
+  resolved "https://registry.npmjs.org/prettier/-/prettier-2.8.8.tgz"
   integrity sha512-tdN8qQGvNjw4CHbY+XXk0JgCXn9QiF21a55rBe5LJAU+kDyC4WQn4+awm2Xfk2lQMk5fKup9XgzTZtGkjBdP9Q==

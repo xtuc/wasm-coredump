@@ -1,4 +1,4 @@
 mod rewriter;
 mod runtime;
 
-pub use rewriter::rewrite;
+pub use rewriter::{rewrite, RewritingOpts};

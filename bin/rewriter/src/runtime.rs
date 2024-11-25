@@ -24,6 +24,26 @@ pub(crate) fn get_runtime(
     return Ok(module);
 }
 
+pub(crate) fn get_runtime_wasi(
+    frames_ptr_global: u32,
+    frames_count_global: u32,
+) -> Result<WasmModule, BoxError> {
+    let contents = include_bytes!("../runtime-wasi.wasm");
+    let module_ast = Arc::new(
+        wasm_parser::parse(contents)
+            .map_err(|err| format!("failed to parse runtime Wasm module: {}", err))?,
+    );
+
+    let visitor = RuntimeTransform {
+        frames_ptr_global,
+        frames_count_global,
+    };
+    traverse::traverse(Arc::clone(&module_ast), Arc::new(visitor));
+
+    let module = WasmModule::new(Arc::clone(&module_ast));
+    return Ok(module);
+}
+
 struct RuntimeTransform {
     frames_ptr_global: u32,
     frames_count_global: u32,
@@ -35,7 +55,7 @@ impl Visitor for RuntimeTransform {
             match globalidx {
                 0 => ctx.replace_node(ast::Instr::global_get(self.frames_ptr_global)),
                 1 => ctx.replace_node(ast::Instr::global_get(self.frames_count_global)),
-                _ => unreachable!(),
+                v => {}
             }
         }
 
@@ -43,7 +63,7 @@ impl Visitor for RuntimeTransform {
             match globalidx {
                 0 => ctx.replace_node(ast::Instr::global_set(self.frames_ptr_global)),
                 1 => ctx.replace_node(ast::Instr::global_set(self.frames_count_global)),
-                _ => unreachable!(),
+                v => {}
             };
         }
     }

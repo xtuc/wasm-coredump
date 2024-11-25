@@ -4,9 +4,12 @@ use wasmtime_wasi::sync::WasiCtxBuilder;
 
 pub(crate) fn run<'a>(ctx: &Context<'a>) -> Result<(), BoxError> {
     let module = ctx.source.inner.clone();
-    let check_memory_operations = true;
-    let debug = false;
-    wasm_coredump_rewriter::rewrite(Arc::clone(&module), check_memory_operations, debug)?;
+    let opts = wasm_coredump_rewriter::RewritingOpts {
+        check_memory_operations: true,
+        debug: false,
+        wasi: false,
+    };
+    wasm_coredump_rewriter::rewrite(Arc::clone(&module), opts)?;
 
     let engine = wasmtime::Engine::default();
     let mut linker = wasmtime::Linker::new(&engine);

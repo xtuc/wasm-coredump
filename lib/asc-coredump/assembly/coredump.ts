@@ -31,6 +31,10 @@ function write_thread_info(ptr: u32): u32 {
   return wrote
 }
 
+export function has_coredump(): boolean {
+    return load<u32>(0) === 0x6d736100;
+}
+
 // Start a new frame
 export function start_frame(codeoffset: u32, funcidx: u32, local_count: u32): void {
   if (load<u32>(0) === 0x6d736100) {

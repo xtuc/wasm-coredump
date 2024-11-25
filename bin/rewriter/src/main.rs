@@ -21,6 +21,10 @@ struct Args {
     #[arg(long)]
     /// Enable debugging, mostly useful for developing this tooling.
     debug: bool,
+
+    #[arg(long)]
+    /// Enable WASI support.
+    wasi: bool,
 }
 
 type BoxError = Box<dyn std::error::Error>;
@@ -42,11 +46,13 @@ fn main() -> Result<(), BoxError> {
     info!("decode: {:.2?}", elapsed);
 
     let now = Instant::now();
-    rewriter::rewrite(
-        Arc::clone(&module),
-        args.check_memory_operations,
-        args.debug,
-    )?;
+
+    let opts = rewriter::RewritingOpts {
+        check_memory_operations: args.check_memory_operations,
+        debug: args.debug,
+        wasi: args.wasi,
+    };
+    rewriter::rewrite(Arc::clone(&module), opts)?;
     let elapsed = now.elapsed();
     info!("transform: {:.2?}", elapsed);
 

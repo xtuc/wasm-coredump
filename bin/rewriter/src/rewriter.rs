@@ -7,12 +7,18 @@
 //!
 //! Where a `frame` is the Coredump frame encoding.
 
-use crate::runtime::get_runtime;
+use crate::runtime::{get_runtime, get_runtime_wasi};
 use core_wasm_ast as ast;
 use core_wasm_ast::traverse::{self, Visitor, VisitorContext, WasmModule};
 use log::debug;
 use std::sync::Arc;
 use std::sync::Mutex;
+
+pub struct RewritingOpts {
+    pub check_memory_operations: bool,
+    pub debug: bool,
+    pub wasi: bool,
+}
 
 // Default value for the entry_funcidx global, indicates the absence of a
 // value.
@@ -20,11 +26,7 @@ const NO_ENTRY_FUNCIDX_VALUE: i32 = i32::MAX;
 
 type BoxError = Box<dyn std::error::Error>;
 
-pub fn rewrite(
-    module_ast: Arc<ast::Module>,
-    check_memory_operations: bool,
-    debug: bool,
-) -> Result<(), BoxError> {
+pub fn rewrite(module_ast: Arc<ast::Module>, opts: RewritingOpts) -> Result<(), BoxError> {
     let module = WasmModule::new(Arc::clone(&module_ast));
 
     // Pointer or cursor to the latest frame
@@ -61,7 +63,11 @@ pub fn rewrite(
     };
     debug!("frames_count_global global at {}", frames_count_global);
 
-    let runtime = get_runtime(frames_ptr_global, frames_count_global)?;
+    let runtime = if opts.wasi {
+        get_runtime_wasi(frames_ptr_global, frames_count_global)?
+    } else {
+        get_runtime(frames_ptr_global, frames_count_global)?
+    };
 
     debug!(
         "code section starts at {}",
@@ -189,24 +195,21 @@ pub fn rewrite(
     };
     debug!("add_i64_local func at {}", add_i64_local);
 
-    let visitor = CoredumpTransform {
-        is_unwinding,
-        entry_funcidx,
-        unreachable_shim,
-        write_coredump,
-        start_frame,
+    {
+        let (func, t) = runtime
+            .get_export_func("has_coredump")
+            .expect("failed to get has_coredump");
 
-        add_i32_local,
-        add_i64_local,
-        add_f32_local,
-        add_f64_local,
+        let typeidx = module.add_type(&t);
+        let funcidx = module.add_function(&func, typeidx);
 
-        check_memory_operations,
-        debug,
-    };
-    traverse::traverse(Arc::clone(&module_ast), Arc::new(visitor));
+        module.add_func_name(funcidx, "coredump/has_coredump");
+        module.add_export_func("has_coredump", funcidx);
 
-    if debug {
+        debug!("has_coredump func at {}", funcidx);
+    }
+
+    if opts.debug {
         module.add_export_func("write_coredump", write_coredump);
 
         // export get_entry_funcidx
@@ -244,6 +247,22 @@ pub fn rewrite(
         };
     }
 
+    let visitor = CoredumpTransform {
+        is_unwinding,
+        entry_funcidx,
+        unreachable_shim,
+        write_coredump,
+        start_frame,
+
+        add_i32_local,
+        add_i64_local,
+        add_f32_local,
+        add_f64_local,
+
+        opts,
+    };
+    traverse::traverse(Arc::clone(&module_ast), Arc::new(visitor));
+
     Ok(())
 }
 
@@ -274,8 +293,7 @@ struct CoredumpTransform {
     add_f32_local: u32,
     add_f64_local: u32,
 
-    check_memory_operations: bool,
-    debug: bool,
+    opts: RewritingOpts,
 }
 
 fn prepend<T>(v: Vec<T>, s: &[T]) -> Vec<T>
@@ -492,7 +510,7 @@ impl Visitor for CoredumpTransform {
             return;
         }
 
-        if self.check_memory_operations {
+        if self.opts.check_memory_operations {
             if matches!(ctx.node.value, ast::Instr::i32_load(_, _)) {
                 let curr_funcidx = ctx.curr_funcidx.unwrap();
                 // At this point we have one i32 on the stack; the memory address.
