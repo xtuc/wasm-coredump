@@ -1,6 +1,6 @@
 [package]
 name = "wasm-coredump-types"
-version = "0.1.24"
+version = "0.2.1"
 edition = "2021"
 authors = ["Sven Sauleau <sven@sauleau.com>"]
 license = "MIT"
