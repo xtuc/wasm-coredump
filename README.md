@@ -1,4 +1,4 @@
-# WebAssembly Coredump 
+# WebAssembly Coredump
 
 > Monorepo for generating, parsing, debugging WebAssembly coredumps.
 
