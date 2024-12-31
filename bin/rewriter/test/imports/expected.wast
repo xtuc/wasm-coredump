@@ -13,10 +13,34 @@
   (import "env" "global" (global $global i32))
   (import "env" "foo2" (func $foo2 (type 0)))
   (func $addTwo (type 1) (param i32 i32) (result i32)
+    global.get $entry_funcidx
+    i32.const 2147483647
+    i32.eq
+    if  ;; label = @1
+      i32.const 3
+      global.set $entry_funcidx
+    end
     local.get 0
     local.get 1
     i32.add
-    unreachable)
+    call $coredump/unreachable_shim
+    i32.const 5
+    i32.const 3
+    i32.const 2
+    i32.const 333
+    call $coredump/start_frame
+    local.get 0
+    call $coredump/add_i32_local
+    local.get 1
+    call $coredump/add_i32_local
+    i32.const 666
+    return
+    global.get $is_unwinding
+    i32.eqz
+    if  ;; label = @1
+      i32.const 2147483647
+      global.set $entry_funcidx
+    end)
   (func $coredump/unreachable_shim (type 2)
     i32.const 1
     global.set $is_unwinding)

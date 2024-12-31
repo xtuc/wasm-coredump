@@ -22,6 +22,7 @@ pub struct WasmModule {
     exports: Vec<ast::Export>,
     custom_sections: Vec<ast::CustomSection>,
     build_id: Option<Vec<u8>>,
+    imported_func_count: u32,
 }
 impl WasmModule {
     pub fn new(inner: Arc<ast::Module>) -> Self {
@@ -37,6 +38,7 @@ impl WasmModule {
         let mut func_names = HashMap::new();
         let mut global_names = HashMap::new();
         let mut build_id = None;
+        let mut imported_func_count = 0;
 
         let mut funcidx = 0;
 
@@ -55,7 +57,10 @@ impl WasmModule {
 
                     for import in &imports {
                         match import.import_type {
-                            ast::ImportType::Func(_) => funcidx += 1,
+                            ast::ImportType::Func(_) => {
+                                imported_func_count += 1;
+                                funcidx += 1;
+                            }
                             _ => {}
                         }
                     }
@@ -114,6 +119,7 @@ impl WasmModule {
             func_code,
             custom_sections,
             build_id,
+            imported_func_count,
             func_names: Mutex::new(func_names),
             global_names: Mutex::new(global_names),
             types: Mutex::new(types),
@@ -231,7 +237,7 @@ impl WasmModule {
     }
 
     pub fn is_func_imported(&self, funcidx: u32) -> bool {
-        (funcidx as usize) < self.imports.len()
+        funcidx <= self.imported_func_count
     }
 
     pub fn imports(&self) -> &Vec<ast::Import> {
@@ -306,21 +312,10 @@ impl WasmModule {
     }
 
     pub fn add_func_local(&self, target_funcidx: u32, local: ast::CodeLocal) -> bool {
-        let mut funcidx = 0;
+        let mut funcidx = self.imported_func_count;
 
         for section in self.inner.sections.lock().unwrap().iter() {
             match &section.value {
-                ast::Section::Import((_size, content)) => {
-                    let imports = content.lock().unwrap().clone();
-
-                    for import in &imports {
-                        match import.import_type {
-                            ast::ImportType::Func(_) => funcidx += 1,
-                            _ => {}
-                        }
-                    }
-                }
-
                 ast::Section::Code((_section_size, content)) => {
                     for c in &mut content.lock().unwrap().value {
                         if funcidx == target_funcidx {
@@ -346,11 +341,11 @@ impl WasmModule {
     pub fn get_func_typeidx(&self, funcidx: u32) -> u32 {
         let func_to_typeidx = self.func_to_typeidx.lock().unwrap();
 
-        if (funcidx as usize) < self.imports.len() {
+        if funcidx < self.imported_func_count {
             todo!()
         } else {
             // Func is an implemented function
-            let funcidx = funcidx as usize - self.imports.len();
+            let funcidx = funcidx - self.imported_func_count;
 
             *func_to_typeidx
                 .get(funcidx as usize)
@@ -473,6 +468,7 @@ impl WasmModule {
     pub fn add_global(&self, global: &ast::Global) -> Option<u32> {
         let mut globalidx = 0;
 
+        // FIXME: we should really pre-compute all that
         for section in self.inner.sections.lock().unwrap().iter() {
             match &section.value {
                 ast::Section::Import((_section_size, content)) => {
@@ -523,19 +519,10 @@ impl WasmModule {
     }
 
     pub fn add_function(&self, func: &ast::Code, typeidx: u32) -> u32 {
-        let mut funcidx = 0;
+        let mut funcidx = self.imported_func_count;
 
         for section in self.inner.sections.lock().unwrap().iter() {
             match &section.value {
-                ast::Section::Import((_section_size, content)) => {
-                    let imports = content.lock().unwrap().clone();
-                    for import in &imports {
-                        match import.import_type {
-                            ast::ImportType::Func(_) => funcidx += 1,
-                            _ => {}
-                        }
-                    }
-                }
                 ast::Section::Code((_section_size, content)) => {
                     funcidx += content.lock().unwrap().value.len() as u32;
                     content.lock().unwrap().value.push(func.to_owned());
@@ -729,7 +716,14 @@ pub fn traverse(module: Arc<ast::Module>, visitor: Arc<dyn Visitor + Send + Sync
                     }
                 }
 
-                curr_funcidx += content.lock().unwrap().len() as u32;
+                for import in &nodes {
+                    match import.import_type {
+                        ast::ImportType::Func(_) => {
+                            curr_funcidx += 1;
+                        }
+                        _ => {}
+                    }
+                }
             }
             ast::Section::Code((_section_size, codes)) => {
                 {
