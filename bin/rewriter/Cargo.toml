@@ -1,6 +1,6 @@
 [package]
 name = "wasm-coredump-rewriter"
-version = "0.2.1"
+version = "0.2.2"
 edition = "2021"
 authors = ["Sven Sauleau <sven@sauleau.com>"]
 license = "MIT"
@@ -14,7 +14,7 @@ include = ["src", "runtime.wasm"]
 [dependencies]
 env_logger = "0.9.1"
 log = "0.4.17"
-wasm-parser = { path = "../../lib/parser", version = "0.2.1" }
-wasm-printer = { path = "../../lib/printer", version = "0.2.1" }
-core-wasm-ast = { path = "../../lib/ast", version = "0.2.1" }
+wasm-parser = { path = "../../lib/parser", version = "0.2.2" }
+wasm-printer = { path = "../../lib/printer", version = "0.2.2" }
+core-wasm-ast = { path = "../../lib/ast", version = "0.2.2" }
 clap = { version = "4.2.5", features = ["derive"] }
