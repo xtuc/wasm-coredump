@@ -38,6 +38,12 @@
         i32.const 667
         return
       end
+    end
+    global.get 4
+    i32.eqz
+    if  ;; label = @1
+      i32.const 2147483647
+      global.set 5
     end)
   (func $addTwo (type 0) (param i32 i32) (result i32)
     local.get 0

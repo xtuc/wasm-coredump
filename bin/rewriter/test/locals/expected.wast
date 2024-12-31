@@ -38,7 +38,13 @@
     local.get 7
     call $coredump/add_f64_local
     i32.const 666
-    return)
+    return
+    global.get 2
+    i32.eqz
+    if  ;; label = @1
+      i32.const 2147483647
+      global.set 3
+    end)
   (func $coredump/unreachable_shim (type 1)
     i32.const 1
     global.set 2)

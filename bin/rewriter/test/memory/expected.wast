@@ -31,7 +31,13 @@
       unreachable
     end
     local.get 0
-    i32.load)
+    i32.load
+    global.get 2
+    i32.eqz
+    if  ;; label = @1
+      i32.const 2147483647
+      global.set 3
+    end)
   (func $invalid (type 0) (result i32)
     (local i32)
     global.get 3
@@ -52,7 +58,13 @@
       unreachable
     end
     local.get 0
-    i32.load)
+    i32.load
+    global.get 2
+    i32.eqz
+    if  ;; label = @1
+      i32.const 2147483647
+      global.set 3
+    end)
   (func $invalid_with_locals (type 0) (result i32)
     (local i32 i64 i32)
     global.get 3
@@ -73,7 +85,13 @@
       unreachable
     end
     local.get 2
-    i32.load)
+    i32.load
+    global.get 2
+    i32.eqz
+    if  ;; label = @1
+      i32.const 2147483647
+      global.set 3
+    end)
   (func $invalid_nested (type 0) (result i32)
     (local i32)
     i32.const 16392
@@ -137,7 +155,13 @@
         return
       end
     end
-    drop)
+    drop
+    global.get 2
+    i32.eqz
+    if  ;; label = @1
+      i32.const 2147483647
+      global.set 3
+    end)
   (func $coredump/unreachable_shim (type 2)
     i32.const 1
     global.set 2)
