@@ -335,22 +335,9 @@ impl WasmModule {
         }
     }
 
-    pub fn get_code_section_start_offset(&self) -> Option<usize> {
-        for section in self.inner.sections.lock().unwrap().iter() {
-            match &section.value {
-                ast::Section::Code(_) => return Some(section.start_offset),
-                _ => {}
-            }
-        }
-        None
-    }
-
+    /// Get the start binary offset of a function
     pub fn get_start_of_func(&self, funcidx: u32) -> Option<usize> {
-        if let Some(start) = self.func_starts.get(&funcidx) {
-            Some(*start)
-        } else {
-            None
-        }
+        self.func_starts.get(&funcidx).cloned()
     }
 
     pub fn get_custom_section(&self, name: &str) -> Option<Vec<u8>> {

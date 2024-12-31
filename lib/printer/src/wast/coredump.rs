@@ -63,6 +63,7 @@ fn dump_frame<W: Write>(
 
         {
             let tab = TAB.repeat(depth + 1);
+            writeln!(out, "{}(instance {})", tab, frame.instanceidx)?;
             writeln!(out, "{}(offset {})", tab, frame.codeoffset)?;
             for local in &frame.locals {
                 write!(out, "{}(local ", tab)?;
@@ -76,8 +77,8 @@ fn dump_frame<W: Write>(
     } else {
         writeln!(
             out,
-            "{}(func {} (offset {}))",
-            tab, frame.funcidx, frame.codeoffset
+            "{}(func {} (instance {}) (offset {}))",
+            tab, frame.funcidx, frame.instanceidx, frame.codeoffset
         )?;
     }
     Ok(())

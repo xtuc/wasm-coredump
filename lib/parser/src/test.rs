@@ -12,6 +12,7 @@ fn test_basic() {
 
         {
             let coredump_frame = wasm_coredump_builder::FrameBuilder::new()
+                .instanceidx(2)
                 .codeoffset(123)
                 .funcidx(456)
                 .build();
@@ -19,6 +20,7 @@ fn test_basic() {
         }
         {
             let coredump_frame = wasm_coredump_builder::FrameBuilder::new()
+                .instanceidx(21)
                 .codeoffset(789)
                 .funcidx(0)
                 .build();
@@ -28,6 +30,7 @@ fn test_basic() {
         coredump_builder.add_thread(thread_builder.build());
     }
 
+    // Try encoding and parsing
     let coredump_wasm = coredump_builder.serialize().unwrap();
     let coredump_wasm = parse(&coredump_wasm).unwrap();
     let coredump_wasm = core_wasm_ast::traverse::WasmModule::new(Arc::new(coredump_wasm));
@@ -41,8 +44,8 @@ fn test_basic() {
         r#"(module (coredump)
     (process (name "foo.exe"))
     (thread (name "main-thread")
-        (func 456 (offset 123))
-        (func 0 (offset 789))
+        (func 456 (instance 2) (offset 123))
+        (func 0 (instance 21) (offset 789))
     )
     (memory 0)
 )"#

@@ -6,7 +6,13 @@ pub(crate) fn run<'a>(ctx: &Context<'a>) -> Result<(), BoxError> {
     let module = ctx.source.inner.clone();
     let check_memory_operations = true;
     let debug = false;
-    wasm_coredump_rewriter::rewrite(Arc::clone(&module), check_memory_operations, debug)?;
+    let instance_id = 0;
+    wasm_coredump_rewriter::rewrite(
+        Arc::clone(&module),
+        check_memory_operations,
+        debug,
+        instance_id,
+    )?;
 
     let engine = wasmtime::Engine::default();
     let mut linker = wasmtime::Linker::new(&engine);

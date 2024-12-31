@@ -24,6 +24,7 @@ pub fn rewrite(
     module_ast: Arc<ast::Module>,
     check_memory_operations: bool,
     debug: bool,
+    instance_id: u32,
 ) -> Result<(), BoxError> {
     let module = WasmModule::new(Arc::clone(&module_ast));
 
@@ -62,11 +63,6 @@ pub fn rewrite(
     debug!("frames_count_global global at {}", frames_count_global);
 
     let runtime = get_runtime(frames_ptr_global, frames_count_global)?;
-
-    debug!(
-        "code section starts at {}",
-        module.get_code_section_start_offset().unwrap()
-    );
 
     // Add `is_unwinding` global
     let is_unwinding = {
@@ -203,6 +199,7 @@ pub fn rewrite(
 
         check_memory_operations,
         debug,
+        instance_id,
     };
     traverse::traverse(Arc::clone(&module_ast), Arc::new(visitor));
 
@@ -276,6 +273,7 @@ struct CoredumpTransform {
 
     check_memory_operations: bool,
     debug: bool,
+    instance_id: u32,
 }
 
 fn prepend<T>(v: Vec<T>, s: &[T]) -> Vec<T>
@@ -375,17 +373,18 @@ impl Visitor for CoredumpTransform {
             {
                 let func_locals = ctx.module.func_locals(curr_funcidx);
                 let locals = locals_flatten(func_locals);
+                let func_start_offset = ctx
+                    .module
+                    .get_start_of_func(curr_funcidx)
+                    .expect("start of func to be known");
 
                 let param_count = curr_func_type.params.len();
 
-                // In Wasm DWARF the offset is relative to the start of the
-                // code section.
-                // https://yurydelendik.github.io/webassembly-dwarf/#pc
-                let code_offset = ctx.node.start_offset as i64
-                    - ctx.module.get_code_section_start_offset().unwrap() as i64;
+                let code_offset = ctx.node.start_offset as i64 - func_start_offset as i64;
                 ctx.insert_node_before(ast::Instr::i32_const(code_offset as i64));
                 ctx.insert_node_before(ast::Instr::i32_const(curr_funcidx as i64));
                 ctx.insert_node_before(ast::Instr::i32_const((locals.len() + param_count) as i64)); // value count
+                ctx.insert_node_before(ast::Instr::i32_const(self.instance_id as i64));
 
                 let start_frame = Arc::new(Mutex::new(ast::Value::new(self.start_frame)));
                 ctx.insert_node_before(ast::Instr::call(start_frame)); // value count
@@ -547,20 +546,24 @@ impl Visitor for CoredumpTransform {
                         // FIXME: duplicated with line 226
                         {
                             let func_locals = ctx.module.func_locals(curr_funcidx);
+                            let func_start_offset = ctx
+                                .module
+                                .get_start_of_func(curr_funcidx)
+                                .expect("start of func to be known");
                             let locals = locals_flatten(func_locals);
 
                             let param_count = curr_func_type.params.len();
 
-                            // In Wasm DWARF the offset is relative to the start of the
-                            // code section.
-                            // https://yurydelendik.github.io/webassembly-dwarf/#pc
-                            let code_offset = ctx.node.start_offset as i64
-                                - ctx.module.get_code_section_start_offset().unwrap() as i64;
+                            let code_offset =
+                                ctx.node.start_offset as i64 - func_start_offset as i64;
                             body.push(ast::Value::new(ast::Instr::i32_const(code_offset as i64)));
                             body.push(ast::Value::new(ast::Instr::i32_const(curr_funcidx as i64)));
                             body.push(ast::Value::new(ast::Instr::i32_const(
                                 (locals.len() + param_count) as i64,
                             ))); // value count
+                            body.push(ast::Value::new(ast::Instr::i32_const(
+                                self.instance_id as i64,
+                            )));
 
                             let start_frame =
                                 Arc::new(Mutex::new(ast::Value::new(self.start_frame)));
@@ -703,19 +706,22 @@ impl Visitor for CoredumpTransform {
                 // create stack frame
                 {
                     let func_locals = ctx.module.func_locals(curr_funcidx);
+                    let func_start_offset = ctx
+                        .module
+                        .get_start_of_func(curr_funcidx)
+                        .expect("start of func to be known");
                     let locals = locals_flatten(func_locals);
 
                     let param_count = curr_func_type.params.len();
 
-                    // In Wasm DWARF the offset is relative to the start of the
-                    // code section.
-                    // https://yurydelendik.github.io/webassembly-dwarf/#pc
-                    let code_offset = ctx.node.start_offset as i64
-                        - ctx.module.get_code_section_start_offset().unwrap() as i64;
+                    let code_offset = ctx.node.start_offset as i64 - func_start_offset as i64;
                     body.push(ast::Value::new(ast::Instr::i32_const(code_offset as i64)));
                     body.push(ast::Value::new(ast::Instr::i32_const(curr_funcidx as i64)));
                     body.push(ast::Value::new(ast::Instr::i32_const(
                         (locals.len() + param_count) as i64,
+                    )));
+                    body.push(ast::Value::new(ast::Instr::i32_const(
+                        self.instance_id as i64,
                     )));
 
                     let start_frame = Arc::new(Mutex::new(ast::Value::new(self.start_frame)));

@@ -9,7 +9,8 @@ test() {
     wasm2wat /tmp/"$name"_expected.wasm > ./test/$name/expected.wast
 }
 
-test basic
+test basic --instance-id=333
 test memory --check-memory-operations
-test with-globals
-test locals
+test with-globals --instance-id=333
+test locals --instance-id=333
+test code-offsets --instance-id=333

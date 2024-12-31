@@ -11,6 +11,19 @@ cargo install wasm-coredump-rewriter
 
 ## Usage
 
+```
+Rewrite Wasm binaries to add coredump support
+
+Usage: wasm-coredump-rewriter [OPTIONS]
+
+Options:
+      --check-memory-operations    Wraps each memory operation. This will likely reduce significantly your program's performance
+      --debug                      Enable debugging, mostly useful for developing this tooling
+      --instance-id <INSTANCE_ID>  Specify the instance index to use in stack frames. MUST match the order in which instances are instantiated at runtime [default: 0]
+  -h, --help                       Print help
+  -V, --version                    Print version
+```
+
 ### Step 1: rewrite the Wasm module
 
 Rewrite the source Wasm module to inject the Coredump runtime code. The runtime

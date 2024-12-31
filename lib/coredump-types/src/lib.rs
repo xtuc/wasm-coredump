@@ -15,6 +15,7 @@ pub struct ThreadInfo {
 
 #[derive(Debug, Clone)]
 pub struct StackFrame {
+    pub instanceidx: u32,
     pub funcidx: u32,
     pub codeoffset: u32,
     pub locals: Vec<Value>,

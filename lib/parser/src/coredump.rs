@@ -61,6 +61,7 @@ pub(crate) fn decode_stack_frame<'a>(
         unimplemented!("unsupported frame type {}", v);
     }
 
+    let (ctx, instanceidx) = ctx.read_leb128()?;
     let (ctx, funcidx) = ctx.read_leb128()?;
     let (ctx, codeoffset) = ctx.read_leb128()?;
     let (ctx, count_local) = ctx.read_leb128()?;
@@ -106,6 +107,7 @@ pub(crate) fn decode_stack_frame<'a>(
     }
 
     let frame = wasm_coredump_types::StackFrame {
+        instanceidx,
         funcidx,
         codeoffset,
         locals,

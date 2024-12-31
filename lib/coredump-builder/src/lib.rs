@@ -38,6 +38,7 @@ mod test;
 #[derive(Default)]
 /// Coredump stack frame builder
 pub struct FrameBuilder {
+    instanceidx: u32,
     funcidx: u32,
     codeoffset: u32,
 }
@@ -46,6 +47,12 @@ impl FrameBuilder {
     /// Create a new stack frame builder.
     pub fn new() -> Self {
         FrameBuilder::default()
+    }
+
+    /// WebAssembly instance index.
+    pub fn instanceidx(mut self, instanceidx: u32) -> Self {
+        self.instanceidx = instanceidx;
+        self
     }
 
     /// WebAssembly function index in the module.
@@ -63,6 +70,7 @@ impl FrameBuilder {
     /// Build the coredump stack frame
     pub fn build(self) -> wasm_coredump_types::StackFrame {
         wasm_coredump_types::StackFrame {
+            instanceidx: self.instanceidx,
             funcidx: self.funcidx,
             codeoffset: self.codeoffset,
             locals: vec![],

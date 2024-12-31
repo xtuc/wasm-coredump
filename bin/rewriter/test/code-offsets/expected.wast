@@ -1,15 +1,13 @@
 (module
-  (type (;0;) (func (result i32)))
+  (type (;0;) (func (param i32 i32) (result i32)))
   (type (;1;) (func))
   (type (;2;) (func))
-  (type (;3;) (func))
-  (type (;4;) (func (param i32 i32 i32 i32)))
-  (type (;5;) (func (param i32)))
-  (type (;6;) (func (param f32)))
-  (type (;7;) (func (param f64)))
-  (type (;8;) (func (param i64)))
-  (func $valid (type 0) (result i32)
-    (local i32)
+  (type (;3;) (func (param i32 i32 i32 i32)))
+  (type (;4;) (func (param i32)))
+  (type (;5;) (func (param f32)))
+  (type (;6;) (func (param f64)))
+  (type (;7;) (func (param i64)))
+  (func $first (type 0) (param i32 i32) (result i32)
     global.get 3
     i32.const 2147483647
     i32.eq
@@ -17,29 +15,26 @@
       i32.const 0
       global.set 3
     end
+    call $coredump/unreachable_shim
     i32.const 0
-    i32.const 123
-    i32.store
     i32.const 0
-    local.tee 0
-    memory.size
-    i32.const 16384
-    i32.mul
-    i32.gt_u
-    if  ;; label = @1
-      call $coredump/write_coredump
-      unreachable
-    end
+    i32.const 2
+    i32.const 333
+    call $coredump/start_frame
     local.get 0
-    i32.load
+    call $coredump/add_i32_local
+    local.get 1
+    call $coredump/add_i32_local
+    i32.const 666
+    return
+    nop
     global.get 2
     i32.eqz
     if  ;; label = @1
       i32.const 2147483647
       global.set 3
     end)
-  (func $invalid (type 0) (result i32)
-    (local i32)
+  (func $one (type 0) (param i32 i32) (result i32)
     global.get 3
     i32.const 2147483647
     i32.eq
@@ -47,26 +42,26 @@
       i32.const 1
       global.set 3
     end
-    i32.const 16392
-    local.tee 0
-    memory.size
-    i32.const 16384
-    i32.mul
-    i32.gt_u
-    if  ;; label = @1
-      call $coredump/write_coredump
-      unreachable
-    end
+    nop
+    call $coredump/unreachable_shim
+    i32.const 1
+    i32.const 1
+    i32.const 2
+    i32.const 333
+    call $coredump/start_frame
     local.get 0
-    i32.load
+    call $coredump/add_i32_local
+    local.get 1
+    call $coredump/add_i32_local
+    i32.const 666
+    return
     global.get 2
     i32.eqz
     if  ;; label = @1
       i32.const 2147483647
       global.set 3
     end)
-  (func $invalid_with_locals (type 0) (result i32)
-    (local i32 i64 i32)
+  (func $far (type 0) (param i32 i32) (result i32)
     global.get 3
     i32.const 2147483647
     i32.eq
@@ -74,101 +69,39 @@
       i32.const 2
       global.set 3
     end
-    i32.const 16392
-    local.tee 2
-    memory.size
-    i32.const 16384
-    i32.mul
-    i32.gt_u
-    if  ;; label = @1
-      call $coredump/write_coredump
-      unreachable
-    end
-    local.get 2
-    i32.load
-    global.get 2
-    i32.eqz
-    if  ;; label = @1
-      i32.const 2147483647
-      global.set 3
-    end)
-  (func $invalid_nested (type 0) (result i32)
-    (local i32)
-    i32.const 16392
-    local.tee 0
-    memory.size
-    i32.const 16384
-    i32.mul
-    i32.gt_u
-    if  ;; label = @1
-      call $coredump/unreachable_shim
-      i32.const 5
-      i32.const 3
-      i32.const 0
-      i32.const 0
-      call $coredump/start_frame
-      i32.const 667
-      return
-    end
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    call $coredump/unreachable_shim
+    i32.const 11
+    i32.const 2
+    i32.const 2
+    i32.const 333
+    call $coredump/start_frame
     local.get 0
-    i32.load)
-  (func $invalid_nested1 (type 0) (result i32)
-    call $invalid_nested
-    global.get 2
-    if  ;; label = @1
-      i32.const 0
-      i32.const 4
-      i32.const 0
-      i32.const 0
-      call $coredump/start_frame
-      global.get 3
-      i32.const 4
-      i32.eq
-      if  ;; label = @2
-        call $coredump/write_coredump
-        unreachable
-      else
-        i32.const 667
-        return
-      end
-    end)
-  (func $invalid_nested2 (type 1)
-    global.get 3
-    i32.const 2147483647
-    i32.eq
-    if  ;; label = @1
-      i32.const 5
-      global.set 3
-    end
-    call $invalid_nested1
-    global.get 2
-    if  ;; label = @1
-      i32.const 0
-      i32.const 5
-      i32.const 0
-      i32.const 0
-      call $coredump/start_frame
-      global.get 3
-      i32.const 5
-      i32.eq
-      if  ;; label = @2
-        call $coredump/write_coredump
-        unreachable
-      else
-        return
-      end
-    end
-    drop
+    call $coredump/add_i32_local
+    local.get 1
+    call $coredump/add_i32_local
+    i32.const 666
+    return
     global.get 2
     i32.eqz
     if  ;; label = @1
       i32.const 2147483647
       global.set 3
     end)
-  (func $coredump/unreachable_shim (type 2)
+  (func $coredump/unreachable_shim (type 1)
     i32.const 1
     global.set 2)
-  (func $coredump/write_coredump (type 3)
+  (func $coredump/write_coredump (type 2)
     (local i32 i32 i32 i32 i32 i32 i32 i32)
     i32.const 0
     i32.load
@@ -1217,7 +1150,7 @@
     i32.const 127
     i32.and
     i32.store8)
-  (func $coredump/start_frame (type 4) (param i32 i32 i32 i32)
+  (func $coredump/start_frame (type 3) (param i32 i32 i32 i32)
     (local i32 i32)
     i32.const 0
     i32.load
@@ -1438,7 +1371,7 @@
     i32.const 1
     i32.add
     global.set 1)
-  (func $coredump/add_i32_local (type 5) (param i32)
+  (func $coredump/add_i32_local (type 4) (param i32)
     (local i32)
     global.get 0
     local.tee 1
@@ -1454,7 +1387,7 @@
     i32.const 4
     i32.add
     global.set 0)
-  (func $coredump/add_f32_local (type 6) (param f32)
+  (func $coredump/add_f32_local (type 5) (param f32)
     (local i32)
     global.get 0
     local.tee 1
@@ -1470,7 +1403,7 @@
     i32.const 4
     i32.add
     global.set 0)
-  (func $coredump/add_f64_local (type 7) (param f64)
+  (func $coredump/add_f64_local (type 6) (param f64)
     (local i32)
     global.get 0
     local.tee 1
@@ -1486,7 +1419,7 @@
     i32.const 8
     i32.add
     global.set 0)
-  (func $coredump/add_i64_local (type 8) (param i64)
+  (func $coredump/add_i64_local (type 7) (param i64)
     (local i32)
     global.get 0
     local.tee 1
@@ -1502,14 +1435,11 @@
     i32.const 8
     i32.add
     global.set 0)
-  (memory (;0;) 1 1)
+  (memory (;0;) 10)
   (global (;0;) (mut i32) (i32.const 0))
   (global (;1;) (mut i32) (i32.const 0))
   (global (;2;) (mut i32) (i32.const 0))
   (global (;3;) (mut i32) (i32.const 2147483647))
-  (export "valid" (func $valid))
-  (export "invalid" (func $invalid))
-  (export "invalid_with_locals" (func $invalid_with_locals))
-  (export "invalid_nested2" (func $invalid_nested2))
-  (export "_start" (func $invalid_nested2))
-  (export "memory" (memory 0)))
+  (export "first" (func $first))
+  (export "far" (func $far))
+  (export "one" (func $one)))

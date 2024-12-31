@@ -39,6 +39,7 @@ pub fn encode_coredump_stack(
 
     for frame in &stack.frames {
         buffer.push(0x0); // version 0
+        write_unsigned_leb128(buffer, frame.instanceidx as u64);
         write_unsigned_leb128(buffer, frame.funcidx as u64);
         write_unsigned_leb128(buffer, frame.codeoffset as u64);
         write_unsigned_leb128(buffer, 0); // locals vec size
