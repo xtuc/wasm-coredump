@@ -14,3 +14,4 @@ test memory --check-memory-operations
 test with-globals --instance-id=333
 test locals --instance-id=333
 test code-offsets --instance-id=333
+test imports --instance-id=333

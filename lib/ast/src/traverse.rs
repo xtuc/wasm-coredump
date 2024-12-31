@@ -438,10 +438,22 @@ impl WasmModule {
     }
 
     pub fn add_global(&self, global: &ast::Global) -> Option<u32> {
+        let mut globalidx = 0;
+
         for section in self.inner.sections.lock().unwrap().iter() {
             match &section.value {
+                ast::Section::Import((_section_size, content)) => {
+                    let imports = content.lock().unwrap();
+                    for import in imports.iter() {
+                        match import.import_type {
+                            ast::ImportType::Global(_) => globalidx += 1,
+                            _ => {}
+                        }
+                    }
+                }
+
                 ast::Section::Global((_section_size, content)) => {
-                    let globalidx = content.lock().unwrap().len() as u32;
+                    globalidx += content.lock().unwrap().len() as u32;
                     content.lock().unwrap().push(global.to_owned());
                     return Some(globalidx);
                 }
@@ -456,7 +468,7 @@ impl WasmModule {
         ));
 
         self.add_section(global_section);
-        return Some(0);
+        return Some(globalidx);
     }
 
     pub fn add_export_func(&self, name: &str, funcidx: u32) {
@@ -483,8 +495,13 @@ impl WasmModule {
         for section in self.inner.sections.lock().unwrap().iter() {
             match &section.value {
                 ast::Section::Import((_section_size, content)) => {
-                    // TODO: why count Import and not Func section?
-                    funcidx += content.lock().unwrap().len() as u32;
+                    let imports = content.lock().unwrap().clone();
+                    for import in &imports {
+                        match import.import_type {
+                            ast::ImportType::Func(_) => funcidx += 1,
+                            _ => {}
+                        }
+                    }
                 }
                 ast::Section::Code((_section_size, content)) => {
                     funcidx += content.lock().unwrap().value.len() as u32;
