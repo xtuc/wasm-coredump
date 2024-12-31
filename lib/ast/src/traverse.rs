@@ -16,6 +16,7 @@ pub struct WasmModule {
     func_code: HashMap<u32, ast::Code>,
     pub func_starts: HashMap<u32, usize>,
     pub func_names: Mutex<HashMap<u32, String>>,
+    global_names: Mutex<HashMap<u32, String>>,
     imports: Vec<ast::Import>,
     globals: Vec<ast::Global>,
     exports: Vec<ast::Export>,
@@ -34,6 +35,7 @@ impl WasmModule {
         let mut func_starts = HashMap::new();
         let mut func_code = HashMap::new();
         let mut func_names = HashMap::new();
+        let mut global_names = HashMap::new();
         let mut build_id = None;
 
         let mut funcidx = 0;
@@ -89,6 +91,8 @@ impl WasmModule {
                             if let Some(v) = &names.func_names {
                                 func_names = v.lock().unwrap().clone();
                             }
+
+                            global_names = names.global_names.lock().unwrap().clone();
                         }
                         ast::CustomSection::BuildId(id) => {
                             build_id = Some(id.clone());
@@ -111,6 +115,7 @@ impl WasmModule {
             custom_sections,
             build_id,
             func_names: Mutex::new(func_names),
+            global_names: Mutex::new(global_names),
             types: Mutex::new(types),
             func_to_typeidx: Mutex::new(func_to_typeidx),
         }
@@ -132,6 +137,24 @@ impl WasmModule {
                             let mut names = names.lock().unwrap();
                             names.insert(funcidx, name.to_owned());
                         }
+                    }
+                    _ => {}
+                },
+                _ => {}
+            }
+        }
+    }
+
+    pub fn add_global_name(&self, globalidx: u32, name: &str) {
+        let mut global_names = self.global_names.lock().unwrap();
+        global_names.insert(globalidx, name.to_owned());
+
+        for section in self.inner.sections.lock().unwrap().iter() {
+            match &section.value {
+                ast::Section::Custom((_size, section)) => match &*section.lock().unwrap() {
+                    ast::CustomSection::Name(section) => {
+                        let mut names = section.global_names.lock().unwrap();
+                        names.insert(globalidx, name.to_owned());
                     }
                     _ => {}
                 },
@@ -431,6 +454,16 @@ impl WasmModule {
         }
 
         0
+    }
+
+    pub fn add_global_import(&self, module: &str, name: &str, ty: &ast::GlobalType) -> u32 {
+        let import = ast::Import {
+            module: module.to_owned(),
+            name: name.to_owned(),
+            import_type: ast::ImportType::Global(ty.to_owned()),
+        };
+
+        todo!()
     }
 
     pub fn add_import(&self, _import: &ast::Import) -> u32 {

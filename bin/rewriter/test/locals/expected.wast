@@ -9,12 +9,12 @@
   (type (;7;) (func (param i64)))
   (func $entry (type 0) (param i32 i64 f32 f64) (result i32)
     (local i32 i64 f32 f64)
-    global.get 3
+    global.get $entry_funcidx
     i32.const 2147483647
     i32.eq
     if  ;; label = @1
       i32.const 0
-      global.set 3
+      global.set $entry_funcidx
     end
     call $coredump/unreachable_shim
     i32.const 0
@@ -40,15 +40,15 @@
     call $coredump/add_f64_local
     i32.const 666
     return
-    global.get 2
+    global.get $is_unwinding
     i32.eqz
     if  ;; label = @1
       i32.const 2147483647
-      global.set 3
+      global.set $entry_funcidx
     end)
   (func $coredump/unreachable_shim (type 1)
     i32.const 1
-    global.set 2)
+    global.set $is_unwinding)
   (func $coredump/write_coredump (type 2)
     (local i32 i32 i32 i32 i32 i32 i32 i32)
     i32.const 0
@@ -58,9 +58,9 @@
     if  ;; label = @1
       unreachable
     end
-    global.get 0
+    global.get $frames_ptr_global
     local.set 5
-    global.get 1
+    global.get $frames_count_global
     local.set 0
     loop  ;; label = @1
       local.get 0
@@ -107,7 +107,7 @@
     i32.const 1
     i32.add
     local.set 6
-    global.get 1
+    global.get $frames_count_global
     local.set 3
     i32.const 0
     local.set 0
@@ -370,7 +370,7 @@
     i32.add
     i32.add
     local.set 1
-    global.get 1
+    global.get $frames_count_global
     local.set 0
     i32.const 0
     local.set 3
@@ -1107,7 +1107,7 @@
     if  ;; label = @1
       unreachable
     end
-    global.get 0
+    global.get $frames_ptr_global
     local.tee 5
     i32.const 0
     i32.store8
@@ -1314,14 +1314,14 @@
     i32.const 1
     i32.add
     i32.add
-    global.set 0
-    global.get 1
+    global.set $frames_ptr_global
+    global.get $frames_count_global
     i32.const 1
     i32.add
-    global.set 1)
+    global.set $frames_count_global)
   (func $coredump/add_i32_local (type 4) (param i32)
     (local i32)
-    global.get 0
+    global.get $frames_ptr_global
     local.tee 1
     i32.const 127
     i32.store8
@@ -1334,10 +1334,10 @@
     local.get 1
     i32.const 4
     i32.add
-    global.set 0)
+    global.set $frames_ptr_global)
   (func $coredump/add_f32_local (type 5) (param f32)
     (local i32)
-    global.get 0
+    global.get $frames_ptr_global
     local.tee 1
     i32.const 125
     i32.store8
@@ -1350,10 +1350,10 @@
     local.get 1
     i32.const 4
     i32.add
-    global.set 0)
+    global.set $frames_ptr_global)
   (func $coredump/add_f64_local (type 6) (param f64)
     (local i32)
-    global.get 0
+    global.get $frames_ptr_global
     local.tee 1
     i32.const 124
     i32.store8
@@ -1366,10 +1366,10 @@
     local.get 1
     i32.const 8
     i32.add
-    global.set 0)
+    global.set $frames_ptr_global)
   (func $coredump/add_i64_local (type 7) (param i64)
     (local i32)
-    global.get 0
+    global.get $frames_ptr_global
     local.tee 1
     i32.const 126
     i32.store8
@@ -1382,11 +1382,11 @@
     local.get 1
     i32.const 8
     i32.add
-    global.set 0)
+    global.set $frames_ptr_global)
   (memory (;0;) 10)
-  (global (;0;) (mut i32) (i32.const 0))
-  (global (;1;) (mut i32) (i32.const 0))
-  (global (;2;) (mut i32) (i32.const 0))
-  (global (;3;) (mut i32) (i32.const 2147483647))
+  (global $frames_ptr_global (mut i32) (i32.const 0))
+  (global $frames_count_global (mut i32) (i32.const 0))
+  (global $is_unwinding (mut i32) (i32.const 0))
+  (global $entry_funcidx (mut i32) (i32.const 2147483647))
   (export "entry" (func $entry))
   (export "memory" (memory 0)))

@@ -364,8 +364,26 @@ pub fn write_section_custom_name(
         buffer.extend_from_slice(&subsection)
     }
 
-    if let Some(_func_local_names) = &content.func_local_names {
-        warn!("Local Names not implemented yet")
+    // Global names
+    {
+        buffer.push(7);
+
+        let mut subsection = vec![];
+        {
+            let global_names = content.global_names.lock().unwrap();
+
+            write_unsigned_leb128(&mut subsection, global_names.len() as u64);
+
+            for idx in 0..global_names.len() {
+                if let Some(name) = global_names.get(&(idx as u32)) {
+                    write_unsigned_leb128(&mut subsection, idx as u64);
+                    write_utf8(&mut subsection, name);
+                }
+            }
+        }
+
+        write_unsigned_leb128(buffer, subsection.len() as u64);
+        buffer.extend_from_slice(&subsection)
     }
 
     Ok(())

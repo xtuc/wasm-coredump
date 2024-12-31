@@ -303,6 +303,7 @@ fn decode_section_custom_name<'a>(
 ) -> IResult<InputContext<'a>, ast::DebugNames> {
     let module = None;
     let mut func_names = None;
+    let mut global_names = HashMap::new();
     let func_local_names = None;
 
     let mut ctx = ctx;
@@ -343,6 +344,11 @@ fn decode_section_custom_name<'a>(
             //         func_local_names.insert(i, ret.1);
             //     }
             // }
+            7 => {
+                let ret = decode_namemap(ctx)?;
+                ctx = ret.0;
+                global_names = ret.1;
+            }
             _ => {
                 warn!(
                     "ignoring custom name subsection: {} ({} byte(s))",
@@ -358,6 +364,7 @@ fn decode_section_custom_name<'a>(
         module,
         func_names,
         func_local_names,
+        global_names: Arc::new(Mutex::new(global_names)),
     };
     Ok((ctx, debug_names))
 }

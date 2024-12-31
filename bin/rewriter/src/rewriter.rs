@@ -44,6 +44,7 @@ pub fn rewrite(
         module.add_global(&global).unwrap()
     };
     debug!("frames_ptr_global global at {}", frames_ptr_global);
+    module.add_global_name(frames_ptr_global, "frames_ptr_global");
 
     // Keep track of number of frames
     let frames_count_global = {
@@ -61,6 +62,7 @@ pub fn rewrite(
         module.add_global(&global).unwrap()
     };
     debug!("frames_count_global global at {}", frames_count_global);
+    module.add_global_name(frames_count_global, "frames_count_global");
 
     let runtime = get_runtime(frames_ptr_global, frames_count_global)?;
 
@@ -80,6 +82,7 @@ pub fn rewrite(
         module.add_global(&global).unwrap()
     };
     debug!("is_unwinding global at {}", is_unwinding);
+    module.add_global_name(is_unwinding, "is_unwinding");
 
     // Add `entry_funcidx` global. Tracking the exported function
     // was the entrypoint
@@ -98,6 +101,7 @@ pub fn rewrite(
         module.add_global(&global).unwrap()
     };
     debug!("entry_funcidx global at {}", entry_funcidx);
+    module.add_global_name(entry_funcidx, "entry_funcidx");
 
     // Add `unreachable_shim`
     let unreachable_shim = {
